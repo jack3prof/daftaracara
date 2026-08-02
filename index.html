@@ -156,6 +156,51 @@
         }
 
         /* =========================
+           REKAP SEKTOR & TOTAL
+        ========================= */
+        .rekap-box {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #f1f5f9;
+            border-radius: 10px;
+            font-size: 13px;
+        }
+
+        .rekap-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+
+        .rekap-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .rekap-item {
+            font-weight: bold;
+            color: #1565c0;
+        }
+
+        .rekap-total {
+            font-weight: bold;
+            color: #0f172a;
+            border-left: 2px solid #cbd5e1;
+            padding-left: 6px;
+            margin-left: 2px;
+        }
+
+        .rekap-ya {
+            color: #16a34a;
+        }
+
+        .rekap-tidak {
+            color: #dc2626;
+        }
+
+        /* =========================
            SEARCH
         ========================= */
         .search {
@@ -280,6 +325,31 @@
                 color: white;
             }
 
+            .rekap-box {
+                background: #334155;
+            }
+
+            .rekap-title {
+                color: #cbd5e1;
+            }
+
+            .rekap-item {
+                color: #60a5fa;
+            }
+
+            .rekap-total {
+                color: #f8fafc;
+                border-left-color: #475569;
+            }
+
+            .rekap-ya {
+                color: #4ade80;
+            }
+
+            .rekap-tidak {
+                color: #f87171;
+            }
+
             td {
                 color: white;
             }
@@ -326,8 +396,14 @@
             <button id="btnSimpan" onclick="simpan()">Simpan</button>
         </div>
 
-        <!-- DATA TABLE -->
+        <!-- DATA TABLE & REKAP -->
         <div class="card">
+            <!-- REKAP PENDAFTAR -->
+            <div class="rekap-box">
+                <div class="rekap-title">Rekap pendaftar</div>
+                <div class="rekap-content" id="rekapContent"></div>
+            </div>
+
             <input class="search" id="cari" type="text" placeholder="🔍 Cari pendaftar atau konfirmasi" oninput="filterData()">
 
             <div class="loading" id="loading">
@@ -422,12 +498,63 @@
                 const response = await fetch(API + "?action=list");
                 semuaData = await response.json();
                 tampilTabel(semuaData);
+                tampilRekap(semuaData);
             } catch (e) {
                 snackbar("Gagal mengambil data");
                 console.error(e);
             }
 
             tampilLoading(false);
+        }
+
+        // =========================
+        // TAMPIL REKAP SEKTOR & TOTAL (URUT ABJAD)
+        // =========================
+        function tampilRekap(data) {
+            let rekapMap = {};
+            let totalSemua = 0;
+            let totalYa = 0;
+            let totalTidak = 0;
+
+            if (Array.isArray(data)) {
+                data.forEach(function (r) {
+                    let pengguna = (r.pengguna || "").trim();
+
+                    if (pengguna.length >= 2) {
+                        let kode = pengguna.substring(0, 2).toUpperCase();
+                        rekapMap[kode] = (rekapMap[kode] || 0) + 1;
+                        totalSemua++;
+                    }
+
+                    let statusKonfirmasi = (r.konfirmasi || r.acara || "").toUpperCase().trim();
+                    if (statusKonfirmasi === "YA") {
+                        totalYa++;
+                    } else if (statusKonfirmasi === "TIDAK") {
+                        totalTidak++;
+                    }
+                });
+            }
+
+            // Urutkan kunci secara abjad (A-Z)
+            let sortedKeys = Object.keys(rekapMap).sort();
+
+            let html = "";
+            if (sortedKeys.length === 0) {
+                html = "<span>-</span>";
+            } else {
+                sortedKeys.forEach(function (key) {
+                    html += `<span class="rekap-item">[${key} = ${rekapMap[key]}]</span> `;
+                });
+
+                // Tambahkan Total di paling belakang
+                html += `
+                    <span class="rekap-total">[Total = ${totalSemua}]</span>
+                    <span class="rekap-total rekap-ya">[YA = ${totalYa}]</span>
+                    <span class="rekap-total rekap-tidak">[TIDAK = ${totalTidak}]</span>
+                `;
+            }
+
+            document.getElementById("rekapContent").innerHTML = html;
         }
 
         // =========================
@@ -481,6 +608,7 @@
             });
 
             tampilTabel(hasil);
+            tampilRekap(hasil);
         }
 
         // =========================
