@@ -431,9 +431,23 @@
 
     <script>
         // =========================
-        // KONFIGURASI API
+        // KONFIGURASI API & POPULASI
         // =========================
         const API = "https://script.google.com/macros/s/AKfycbxscpgNrYHw3vOmPbqYbnpbBM0RTPuiXYGA8YpTEwh8_qUOP7Z1gJmqt8gAOZUsHk2Q/exec";
+
+        const POPULASI = {
+            "BA": 103,
+            "BI": 23,
+            "GA": 105,
+            "PR": 53,
+            "RG": 64,
+            "RW": 73,
+            "SA": 103,
+            "SL": 38,
+            "SU": 49
+        };
+
+        const TOTAL_POPULASI = Object.values(POPULASI).reduce((a, b) => a + b, 0);
 
         let semuaData = [];
 
@@ -508,7 +522,7 @@
         }
 
         // =========================
-        // TAMPIL REKAP SEKTOR & TOTAL (URUT ABJAD)
+        // TAMPIL REKAP SEKTOR & TOTAL
         // =========================
         function tampilRekap(data) {
             let rekapMap = {};
@@ -535,24 +549,25 @@
                 });
             }
 
-            // Urutkan kunci secara abjad (A-Z)
-            let sortedKeys = Object.keys(rekapMap).sort();
+            let sortedKeys = Object.keys(POPULASI).sort();
 
             let html = "";
-            if (sortedKeys.length === 0) {
-                html = "<span>-</span>";
-            } else {
-                sortedKeys.forEach(function (key) {
-                    html += `<span class="rekap-item">[${key} = ${rekapMap[key]}]</span> `;
-                });
+            sortedKeys.forEach(function (key) {
+                let pendaftar = rekapMap[key] || 0;
+                let pop = POPULASI[key] || 0;
+                let persen = pop > 0 ? ((pendaftar / pop) * 100).toFixed(1) : 0;
 
-                // Tambahkan Total di paling belakang
-                html += `
-                    <span class="rekap-total">[Total = ${totalSemua}]</span>
-                    <span class="rekap-total rekap-ya">[YA = ${totalYa}]</span>
-                    <span class="rekap-total rekap-tidak">[TIDAK = ${totalTidak}]</span>
-                `;
-            }
+                html += `<span class="rekap-item">[${key} = ${pendaftar}/${pop} (${persen}%)]</span> `;
+            });
+
+            let persenTotal = TOTAL_POPULASI > 0 ? ((totalSemua / TOTAL_POPULASI) * 100).toFixed(1) : 0;
+            let persenYa = TOTAL_POPULASI > 0 ? ((totalYa / TOTAL_POPULASI) * 100).toFixed(1) : 0;
+
+            html += `
+                <span class="rekap-total">[Total = ${totalSemua}/${TOTAL_POPULASI} (${persenTotal}%)]</span>
+                <span class="rekap-total rekap-ya">[YA = ${totalYa} (${persenYa}%)]</span>
+                <span class="rekap-total rekap-tidak">[TIDAK = ${totalTidak}]</span>
+            `;
 
             document.getElementById("rekapContent").innerHTML = html;
         }
