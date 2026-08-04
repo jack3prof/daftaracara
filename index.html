@@ -556,13 +556,13 @@
             sortedKeys.forEach(function (key) {
                 let pendaftar = rekapMap[key] || 0;
                 let pop = POPULASI[key] || 0;
-                let persen = pop > 0 ? ((pendaftar / pop) * 100).toFixed(1) : 0;
+                let persen = pop > 0 ? ((pendaftar / pop) * 100).toFixed(0) : 0;
 
                 html += `<span class="rekap-item">[${key} = ${pendaftar}/${pop} (${persen}%)]</span> `;
             });
 
             let persenTotal = TOTAL_POPULASI > 0 ? ((totalSemua / TOTAL_POPULASI) * 100).toFixed(1) : 0;
-            let persenYa = TOTAL_POPULASI > 0 ? ((totalYa / TOTAL_POPULASI) * 100).toFixed(1) : 0;
+            let persenYa = TOTAL_POPULASI > 0 ? ((totalYa / TOTAL_POPULASI) * 100).toFixed(0) : 0;
 
             html += `
                 <span class="rekap-total">[Total = ${totalSemua}/${TOTAL_POPULASI} (${persenTotal}%)]</span>
