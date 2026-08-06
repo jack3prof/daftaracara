@@ -677,7 +677,8 @@
                     <td colspan="2" style="text-align:center">Tidak ada data</td>
                 </tr>`;
             } else {
-                data.forEach(function (r) {
+                let dataReversed = [...data].reverse();
+				dataReversed.forEach(function (r) {
                     let statusKonfirmasi = aman(r.konfirmasi || r.acara || "");
                     let ket = aman(r.keterangan || "");
 
