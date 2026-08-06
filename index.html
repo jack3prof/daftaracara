@@ -462,8 +462,8 @@
         // =========================
         // KONFIGURASI API & POPULASI
         // =========================
-        const API = "https://script.google.com/macros/s/AKfycbxscpgNrYHw3vOmPbqYbnpbBM0RTPuiXYGA8YpTEwh8_qUOP7Z1gJmqt8gAOZUsHk2Q/exec";
-
+        const API = "https://script.google.com/macros/s/AKfycbznxjUtsAHcYJOKDG-6_WTFG0EKjTgCxgiO0SBwLkDgzurp_43R4EoSn4wHwKfmDhT6/exec";
+		 
         const POPULASI = {
             "BA": 104,
             "BI": 31,
@@ -556,8 +556,8 @@
         // TAMPIL REKAP SEKTOR & TOTAL
         // =========================
         function tampilRekap(data) {
-            // Batas Waktu: 6 Agustus Jam 12.00
-            const BATAS_WAKTU = new Date("2026-08-06T12:00:00");
+            // Batas Waktu: 6 Agustus 2026 Jam 12.00 WIB (UTC+7)
+            const BATAS_WAKTU = new Date("2026-08-06T12:00:00+07:00").getTime();
 
             let rekapSebelum = {};
             let rekapSesudah = {};
@@ -579,9 +579,25 @@
                     if (pengguna.length >= 2) {
                         let kode = pengguna.substring(0, 2).toUpperCase();
                         
-                        let tglPendaftaran = (r.timestamp || r.created_at || r.tanggal) ? new Date(r.timestamp || r.created_at || r.tanggal) : null;
+                        let rawDate = r.timestamp || r.created_at || r.tanggal;
+                        let tglPendaftaran = null;
 
-                        if (tglPendaftaran && tglPendaftaran >= BATAS_WAKTU) {
+                        if (rawDate) {
+                            let dateStr = String(rawDate).trim();
+
+                            // Mengonversi "YYYY-MM-DD HH:mm:ss" dari Google Sheets 
+                            // menjadi "YYYY-MM-DDTHH:mm:ss+07:00" agar dibaca presisi sebagai WIB
+                            if (dateStr.includes(" ")) {
+                                dateStr = dateStr.replace(" ", "T") + "+07:00";
+                            } else if (!dateStr.includes("+") && !dateStr.endsWith("Z")) {
+                                dateStr += "+07:00";
+                            }
+
+                            tglPendaftaran = new Date(dateStr).getTime();
+                        }
+
+                        // Bandingkan dengan Batas Waktu 6 Ags 12:00 WIB
+                        if (tglPendaftaran && !isNaN(tglPendaftaran) && tglPendaftaran >= BATAS_WAKTU) {
                             rekapSesudah[kode] = (rekapSesudah[kode] || 0) + 1;
                             totalSesudah++;
                         } else {
@@ -590,12 +606,10 @@
                         }
                     }
 
-                    // Hitung Konfirmasi 'YA' dan Karakter Ke-4 (Hanya jika Konfirmasi YA)
+                    // Hitung Konfirmasi 'YA' dan Karakter Ke-4
                     if (statusKonfirmasi === "YA") {
                         totalYa++;
 
-                        // Hitung Karakter Ke-4 dari Format "XX XX123 XXX12"
-                        // Indeks ke-3 adalah Karakter Ke-4 (Contoh: "GA IA404..." -> 'I', "RW AX404..." -> 'A')
                         if (pengguna.length >= 4) {
                             let charKe4 = pengguna.charAt(3).toUpperCase();
                             if (charKe4 === "I") {
@@ -613,7 +627,7 @@
 
             let html = "";
 
-            // 1. Rekap Sebelum 6 Ags 12.00 (Angka Pendaftar & Persen, Tanpa Populasi)
+            // 1. Rekap Sebelum 6 Ags 12.00 WIB
             html += `<div class="rekap-row"><strong>Submit sebelum 6 Ags 12.00:</strong> `;
             sortedKeys.forEach(function (key) {
                 let pendaftar = rekapSebelum[key] || 0;
@@ -623,7 +637,7 @@
             });
             html += `</div>`;
 
-            // 2. Rekap Sesudah 6 Ags 12.00
+            // 2. Rekap Sesudah 6 Ags 12.00 WIB
             html += `<div class="rekap-row"><strong>Submit sesudah 6 Ags 12.00:</strong> `;
             sortedKeys.forEach(function (key) {
                 let pendaftar = rekapSesudah[key] || 0;
