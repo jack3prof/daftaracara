@@ -59,6 +59,13 @@
             box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
         }
 
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #1565c0;
+        }
+
         /* =========================
            FORM
         ========================= */
@@ -174,6 +181,12 @@
 
         .rekap-content {
             display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .rekap-row {
+            display: flex;
             flex-wrap: wrap;
             gap: 6px;
             align-items: center;
@@ -187,17 +200,17 @@
         .rekap-total {
             font-weight: bold;
             color: #0f172a;
-            border-left: 2px solid #cbd5e1;
-            padding-left: 6px;
-            margin-left: 2px;
         }
 
-        .rekap-ya {
-            color: #16a34a;
-        }
-
-        .rekap-tidak {
-            color: #dc2626;
+        .rekap-info {
+            font-size: 12px;
+            color: #475569;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 6px;
+            margin-top: 4px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         /* =========================
@@ -299,6 +312,10 @@
                 background: #1e293b;
             }
 
+            .card-title {
+                color: #60a5fa;
+            }
+
             input {
                 background: #334155;
                 color: white;
@@ -339,15 +356,11 @@
 
             .rekap-total {
                 color: #f8fafc;
-                border-left-color: #475569;
             }
 
-            .rekap-ya {
-                color: #4ade80;
-            }
-
-            .rekap-tidak {
-                color: #f87171;
+            .rekap-info {
+                color: #94a3b8;
+                border-top-color: #475569;
             }
 
             td {
@@ -400,7 +413,7 @@
         <div class="card">
             <!-- REKAP PENDAFTAR -->
             <div class="rekap-box">
-                <div class="rekap-title">Rekap pendaftar</div>
+                <div class="rekap-title">Rekap Pendaftar</div>
                 <div class="rekap-content" id="rekapContent"></div>
             </div>
 
@@ -420,6 +433,22 @@
                         </tr>
                     </thead>
                     <tbody id="tabelData"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TABEL PENDAFTAR DOBEL -->
+        <div class="card">
+            <div class="card-title">⚠️ Pendaftar Dobel (>1x)</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pendaftar</th>
+                            <th>Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelDobel"></tbody>
                 </table>
             </div>
         </div>
@@ -487,7 +516,7 @@
                 return `${match[1]} ${match[2]} ${match[3]}`;
             }
 
-            return inputRaw.toUpperCase(); // Kembalikan nilai asli di-uppercase jika urutan karakter salah
+            return inputRaw.toUpperCase();
         }
 
         // =========================
@@ -514,6 +543,7 @@
                 semuaData = await response.json();
                 tampilTabel(semuaData);
                 tampilRekap(semuaData);
+                tampilTabelDobel(semuaData);
             } catch (e) {
                 snackbar("Gagal mengambil data");
                 console.error(e);
@@ -526,48 +556,96 @@
         // TAMPIL REKAP SEKTOR & TOTAL
         // =========================
         function tampilRekap(data) {
-            let rekapMap = {};
-            let totalSemua = 0;
+            // Batas Waktu: 6 Agustus Jam 12.00
+            const BATAS_WAKTU = new Date("2026-08-06T12:00:00");
+
+            let rekapSebelum = {};
+            let rekapSesudah = {};
+
+            let totalSebelum = 0;
+            let totalSesudah = 0;
+
             let totalYa = 0;
-            let totalTidak = 0;
+            let totalKarakterKe4I = 0;
+            let totalKarakterKe4A = 0;
 
             if (Array.isArray(data)) {
                 data.forEach(function (r) {
-                    let pengguna = (r.pengguna || "").trim();
+                    // Bersihkan format pendaftar agar seragam "XX XX123 XXX12"
+                    let pengguna = bersihkanPengguna((r.pengguna || "").trim());
+                    let statusKonfirmasi = (r.konfirmasi || r.acara || "").toUpperCase().trim();
 
+                    // Hitung Rekap Sektor berdasarkan Waktu Pendaftaran
                     if (pengguna.length >= 2) {
                         let kode = pengguna.substring(0, 2).toUpperCase();
-                        rekapMap[kode] = (rekapMap[kode] || 0) + 1;
-                        totalSemua++;
+                        
+                        let tglPendaftaran = (r.timestamp || r.created_at || r.tanggal) ? new Date(r.timestamp || r.created_at || r.tanggal) : null;
+
+                        if (tglPendaftaran && tglPendaftaran >= BATAS_WAKTU) {
+                            rekapSesudah[kode] = (rekapSesudah[kode] || 0) + 1;
+                            totalSesudah++;
+                        } else {
+                            rekapSebelum[kode] = (rekapSebelum[kode] || 0) + 1;
+                            totalSebelum++;
+                        }
                     }
 
-                    let statusKonfirmasi = (r.konfirmasi || r.acara || "").toUpperCase().trim();
+                    // Hitung Konfirmasi 'YA' dan Karakter Ke-4 (Hanya jika Konfirmasi YA)
                     if (statusKonfirmasi === "YA") {
                         totalYa++;
-                    } else if (statusKonfirmasi === "TIDAK") {
-                        totalTidak++;
+
+                        // Hitung Karakter Ke-4 dari Format "XX XX123 XXX12"
+                        // Indeks ke-3 adalah Karakter Ke-4 (Contoh: "GA IA404..." -> 'I', "RW AX404..." -> 'A')
+                        if (pengguna.length >= 4) {
+                            let charKe4 = pengguna.charAt(3).toUpperCase();
+                            if (charKe4 === "I") {
+                                totalKarakterKe4I++;
+                            } else if (charKe4 === "A") {
+                                totalKarakterKe4A++;
+                            }
+                        }
                     }
                 });
             }
 
+            let totalSemua = totalSebelum + totalSesudah;
             let sortedKeys = Object.keys(POPULASI).sort();
 
             let html = "";
+
+            // 1. Rekap Sebelum 6 Ags 12.00 (Angka Pendaftar & Persen, Tanpa Populasi)
+            html += `<div class="rekap-row"><strong>Submit sebelum 6 Ags 12.00:</strong> `;
             sortedKeys.forEach(function (key) {
-                let pendaftar = rekapMap[key] || 0;
+                let pendaftar = rekapSebelum[key] || 0;
                 let pop = POPULASI[key] || 0;
                 let persen = pop > 0 ? ((pendaftar / pop) * 100).toFixed(0) : 0;
-
-                html += `<span class="rekap-item">[${key} = ${pendaftar}/${pop} (${persen}%)]</span> `;
+                html += `<span class="rekap-item">[${key} = ${pendaftar} (${persen}%)]</span> `;
             });
+            html += `</div>`;
 
+            // 2. Rekap Sesudah 6 Ags 12.00
+            html += `<div class="rekap-row"><strong>Submit sesudah 6 Ags 12.00:</strong> `;
+            sortedKeys.forEach(function (key) {
+                let pendaftar = rekapSesudah[key] || 0;
+                html += `<span class="rekap-item">[${key} = ${pendaftar}]</span> `;
+            });
+            html += `</div>`;
+
+            // 3. Jumlah Total Pendaftar dan Persen
             let persenTotal = TOTAL_POPULASI > 0 ? ((totalSemua / TOTAL_POPULASI) * 100).toFixed(1) : 0;
-            let persenYa = TOTAL_POPULASI > 0 ? ((totalYa / TOTAL_POPULASI) * 100).toFixed(0) : 0;
-
             html += `
-                <span class="rekap-total">[Total = ${totalSemua}/${TOTAL_POPULASI} (${persenTotal}%)]</span>
-                <span class="rekap-total rekap-ya">[YA = ${totalYa} (${persenYa}%)]</span>
-                <span class="rekap-total rekap-tidak">[TIDAK = ${totalTidak}]</span>
+                <div class="rekap-row" style="margin-top: 4px;">
+                    <span class="rekap-total">Total Pendaftar = ${totalSemua} (${persenTotal}%)</span>
+                </div>
+            `;
+
+            // 4. Informasi Tambahan di Akhir
+            html += `
+                <div class="rekap-info">
+                    <span><strong>Jumlah YA:</strong> ${totalYa}</span>
+                    <span><strong>Ikhwan :</strong> ${totalKarakterKe4I}</span>
+                    <span><strong>Akhwat :</strong> ${totalKarakterKe4A}</span>
+                </div>
             `;
 
             document.getElementById("rekapContent").innerHTML = html;
@@ -606,6 +684,42 @@
         }
 
         // =========================
+        // TAMPIL TABEL DOBEL
+        // =========================
+        function tampilTabelDobel(data) {
+            let hitung = {};
+
+            if (Array.isArray(data)) {
+                data.forEach(function (r) {
+                    let pendaftar = bersihkanPengguna((r.pengguna || "").trim());
+                    if (pendaftar) {
+                        hitung[pendaftar] = (hitung[pendaftar] || 0) + 1;
+                    }
+                });
+            }
+
+            let dobel = Object.keys(hitung).filter(key => hitung[key] > 1);
+            let html = "";
+
+            if (dobel.length === 0) {
+                html = `
+                <tr>
+                    <td colspan="2" style="text-align:center">Tidak ada pendaftar dobel</td>
+                </tr>`;
+            } else {
+                dobel.forEach(function (key) {
+                    html += `
+                    <tr>
+                        <td>${aman(key)}</td>
+                        <td>${hitung[key]}x</td>
+                    </tr>`;
+                });
+            }
+
+            document.getElementById("tabelDobel").innerHTML = html;
+        }
+
+        // =========================
         // FILTER PENCARIAN
         // =========================
         function filterData() {
@@ -625,6 +739,7 @@
 
             tampilTabel(hasil);
             tampilRekap(hasil);
+            tampilTabelDobel(hasil);
         }
 
         // =========================
@@ -633,11 +748,9 @@
         async function simpan() {
             let inputEl = document.getElementById("pengguna");
 
-            // Auto-fix format spasi & uppercase sebelum dikirim
             let pengguna = bersihkanPengguna(inputEl.value);
-            inputEl.value = pengguna; // Tampilkan nilai hasil perbaikan di input
+            inputEl.value = pengguna;
 
-            // Regex baku: 2 huruf + spasi + 2 huruf 3 angka + spasi + 3 huruf 2 angka
             let regexBaku = /^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/;
 
             if (!regexBaku.test(pengguna)) {
