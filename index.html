@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Acara GCQ</title>
+    <title>Daftar Acara</title>
 
     <style>
         /* =========================
@@ -57,13 +57,6 @@
             padding: 16px;
             margin-bottom: 14px;
             box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #1565c0;
         }
 
         /* =========================
@@ -181,12 +174,6 @@
 
         .rekap-content {
             display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .rekap-row {
-            display: flex;
             flex-wrap: wrap;
             gap: 6px;
             align-items: center;
@@ -200,17 +187,17 @@
         .rekap-total {
             font-weight: bold;
             color: #0f172a;
+            border-left: 2px solid #cbd5e1;
+            padding-left: 6px;
+            margin-left: 2px;
         }
 
-        .rekap-info {
-            font-size: 12px;
-            color: #475569;
-            border-top: 1px solid #cbd5e1;
-            padding-top: 6px;
-            margin-top: 4px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
+        .rekap-ya {
+            color: #16a34a;
+        }
+
+        .rekap-tidak {
+            color: #dc2626;
         }
 
         /* =========================
@@ -312,10 +299,6 @@
                 background: #1e293b;
             }
 
-            .card-title {
-                color: #60a5fa;
-            }
-
             input {
                 background: #334155;
                 color: white;
@@ -356,11 +339,15 @@
 
             .rekap-total {
                 color: #f8fafc;
+                border-left-color: #475569;
             }
 
-            .rekap-info {
-                color: #94a3b8;
-                border-top-color: #475569;
+            .rekap-ya {
+                color: #4ade80;
+            }
+
+            .rekap-tidak {
+                color: #f87171;
             }
 
             td {
@@ -377,7 +364,7 @@
 <body>
 
     <div class="header">
-        Daftar Acara GCQ
+        Pendaftaran Acara
     </div>
 
     <div class="container">
@@ -413,7 +400,7 @@
         <div class="card">
             <!-- REKAP PENDAFTAR -->
             <div class="rekap-box">
-                <div class="rekap-title">Rekap Pendaftar</div>
+                <div class="rekap-title">Rekap pendaftar</div>
                 <div class="rekap-content" id="rekapContent"></div>
             </div>
 
@@ -437,22 +424,6 @@
             </div>
         </div>
 
-        <!-- TABEL PENDAFTAR DOBEL -->
-        <div class="card">
-            <div class="card-title">⚠️ Pendaftar Dobel (>1x)</div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Pendaftar</th>
-                            <th>Jumlah</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelDobel"></tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
 
     <!-- SNACKBAR -->
@@ -462,8 +433,8 @@
         // =========================
         // KONFIGURASI API & POPULASI
         // =========================
-        const API = "https://script.google.com/macros/s/AKfycbznxjUtsAHcYJOKDG-6_WTFG0EKjTgCxgiO0SBwLkDgzurp_43R4EoSn4wHwKfmDhT6/exec";
-		 
+        const API = "https://script.google.com/macros/s/AKfycbxscpgNrYHw3vOmPbqYbnpbBM0RTPuiXYGA8YpTEwh8_qUOP7Z1gJmqt8gAOZUsHk2Q/exec";
+
         const POPULASI = {
             "BA": 104,
             "BI": 31,
@@ -516,7 +487,7 @@
                 return `${match[1]} ${match[2]} ${match[3]}`;
             }
 
-            return inputRaw.toUpperCase();
+            return inputRaw.toUpperCase(); // Kembalikan nilai asli di-uppercase jika urutan karakter salah
         }
 
         // =========================
@@ -543,7 +514,6 @@
                 semuaData = await response.json();
                 tampilTabel(semuaData);
                 tampilRekap(semuaData);
-                tampilTabelDobel(semuaData);
             } catch (e) {
                 snackbar("Gagal mengambil data");
                 console.error(e);
@@ -556,110 +526,48 @@
         // TAMPIL REKAP SEKTOR & TOTAL
         // =========================
         function tampilRekap(data) {
-            // Batas Waktu: 6 Agustus 2026 Jam 12.00 WIB (UTC+7)
-            const BATAS_WAKTU = new Date("2026-08-06T12:00:00+07:00").getTime();
-
-            let rekapSebelum = {};
-            let rekapSesudah = {};
-
-            let totalSebelum = 0;
-            let totalSesudah = 0;
-
+            let rekapMap = {};
+            let totalSemua = 0;
             let totalYa = 0;
-            let totalKarakterKe4I = 0;
-            let totalKarakterKe4A = 0;
+            let totalTidak = 0;
 
             if (Array.isArray(data)) {
                 data.forEach(function (r) {
-                    // Bersihkan format pendaftar agar seragam "XX XX123 XXX12"
-                    let pengguna = bersihkanPengguna((r.pengguna || "").trim());
-                    let statusKonfirmasi = (r.konfirmasi || r.acara || "").toUpperCase().trim();
+                    let pengguna = (r.pengguna || "").trim();
 
-                    // Hitung Rekap Sektor berdasarkan Waktu Pendaftaran
                     if (pengguna.length >= 2) {
                         let kode = pengguna.substring(0, 2).toUpperCase();
-                        
-                        let rawDate = r.timestamp || r.created_at || r.tanggal;
-                        let tglPendaftaran = null;
-
-                        if (rawDate) {
-                            let dateStr = String(rawDate).trim();
-
-                            // Mengonversi "YYYY-MM-DD HH:mm:ss" dari Google Sheets 
-                            // menjadi "YYYY-MM-DDTHH:mm:ss+07:00" agar dibaca presisi sebagai WIB
-                            if (dateStr.includes(" ")) {
-                                dateStr = dateStr.replace(" ", "T") + "+07:00";
-                            } else if (!dateStr.includes("+") && !dateStr.endsWith("Z")) {
-                                dateStr += "+07:00";
-                            }
-
-                            tglPendaftaran = new Date(dateStr).getTime();
-                        }
-
-                        // Bandingkan dengan Batas Waktu 6 Ags 12:00 WIB
-                        if (tglPendaftaran && !isNaN(tglPendaftaran) && tglPendaftaran >= BATAS_WAKTU) {
-                            rekapSesudah[kode] = (rekapSesudah[kode] || 0) + 1;
-                            totalSesudah++;
-                        } else {
-                            rekapSebelum[kode] = (rekapSebelum[kode] || 0) + 1;
-                            totalSebelum++;
-                        }
+                        rekapMap[kode] = (rekapMap[kode] || 0) + 1;
+                        totalSemua++;
                     }
 
-                    // Hitung Konfirmasi 'YA' dan Karakter Ke-4
+                    let statusKonfirmasi = (r.konfirmasi || r.acara || "").toUpperCase().trim();
                     if (statusKonfirmasi === "YA") {
                         totalYa++;
-
-                        if (pengguna.length >= 4) {
-                            let charKe4 = pengguna.charAt(3).toUpperCase();
-                            if (charKe4 === "I") {
-                                totalKarakterKe4I++;
-                            } else if (charKe4 === "A") {
-                                totalKarakterKe4A++;
-                            }
-                        }
+                    } else if (statusKonfirmasi === "TIDAK") {
+                        totalTidak++;
                     }
                 });
             }
 
-            let totalSemua = totalSebelum + totalSesudah;
             let sortedKeys = Object.keys(POPULASI).sort();
 
             let html = "";
-
-            // 1. Rekap Sebelum 6 Ags 12.00 WIB
-            html += `<div class="rekap-row"><strong>Submit sebelum 6 Ags 12.00:</strong> `;
             sortedKeys.forEach(function (key) {
-                let pendaftar = rekapSebelum[key] || 0;
+                let pendaftar = rekapMap[key] || 0;
                 let pop = POPULASI[key] || 0;
                 let persen = pop > 0 ? ((pendaftar / pop) * 100).toFixed(0) : 0;
-                html += `<span class="rekap-item">[${key} = ${pendaftar} (${persen}%)]</span> `;
-            });
-            html += `</div>`;
 
-            // 2. Rekap Sesudah 6 Ags 12.00 WIB
-            html += `<div class="rekap-row"><strong>Submit sesudah 6 Ags 12.00:</strong> `;
-            sortedKeys.forEach(function (key) {
-                let pendaftar = rekapSesudah[key] || 0;
-                html += `<span class="rekap-item">[${key} = ${pendaftar}]</span> `;
+                html += `<span class="rekap-item">[${key} = ${pendaftar}/${pop} (${persen}%)]</span> `;
             });
-            html += `</div>`;
 
-            // 3. Jumlah Total Pendaftar dan Persen
             let persenTotal = TOTAL_POPULASI > 0 ? ((totalSemua / TOTAL_POPULASI) * 100).toFixed(1) : 0;
-            html += `
-                <div class="rekap-row" style="margin-top: 4px;">
-                    <span class="rekap-total">Total Pendaftar = ${totalSemua} (${persenTotal}%)</span>
-                </div>
-            `;
+            let persenYa = TOTAL_POPULASI > 0 ? ((totalYa / TOTAL_POPULASI) * 100).toFixed(0) : 0;
 
-            // 4. Informasi Tambahan di Akhir
             html += `
-                <div class="rekap-info">
-                    <span><strong>Jumlah YA:</strong> ${totalYa}</span>
-                    <span><strong>Ikhwan :</strong> ${totalKarakterKe4I}</span>
-                    <span><strong>Akhwat :</strong> ${totalKarakterKe4A}</span>
-                </div>
+                <span class="rekap-total">[Total = ${totalSemua}/${TOTAL_POPULASI} (${persenTotal}%)]</span>
+                <span class="rekap-total rekap-ya">[YA = ${totalYa} (${persenYa}%)]</span>
+                <span class="rekap-total rekap-tidak">[TIDAK = ${totalTidak}]</span>
             `;
 
             document.getElementById("rekapContent").innerHTML = html;
@@ -677,8 +585,7 @@
                     <td colspan="2" style="text-align:center">Tidak ada data</td>
                 </tr>`;
             } else {
-                let dataReversed = [...data].reverse();
-				dataReversed.forEach(function (r) {
+                data.forEach(function (r) {
                     let statusKonfirmasi = aman(r.konfirmasi || r.acara || "");
                     let ket = aman(r.keterangan || "");
 
@@ -696,42 +603,6 @@
             }
 
             document.getElementById("tabelData").innerHTML = html;
-        }
-
-        // =========================
-        // TAMPIL TABEL DOBEL
-        // =========================
-        function tampilTabelDobel(data) {
-            let hitung = {};
-
-            if (Array.isArray(data)) {
-                data.forEach(function (r) {
-                    let pendaftar = bersihkanPengguna((r.pengguna || "").trim());
-                    if (pendaftar) {
-                        hitung[pendaftar] = (hitung[pendaftar] || 0) + 1;
-                    }
-                });
-            }
-
-            let dobel = Object.keys(hitung).filter(key => hitung[key] > 1);
-            let html = "";
-
-            if (dobel.length === 0) {
-                html = `
-                <tr>
-                    <td colspan="2" style="text-align:center">Tidak ada pendaftar dobel</td>
-                </tr>`;
-            } else {
-                dobel.forEach(function (key) {
-                    html += `
-                    <tr>
-                        <td>${aman(key)}</td>
-                        <td>${hitung[key]}x</td>
-                    </tr>`;
-                });
-            }
-
-            document.getElementById("tabelDobel").innerHTML = html;
         }
 
         // =========================
@@ -754,7 +625,6 @@
 
             tampilTabel(hasil);
             tampilRekap(hasil);
-            tampilTabelDobel(hasil);
         }
 
         // =========================
@@ -763,13 +633,25 @@
         async function simpan() {
             let inputEl = document.getElementById("pengguna");
 
+            // Auto-fix format spasi & uppercase sebelum dikirim
             let pengguna = bersihkanPengguna(inputEl.value);
-            inputEl.value = pengguna;
+            inputEl.value = pengguna; // Tampilkan nilai hasil perbaikan di input
 
+            // Regex baku: 2 huruf + spasi + 2 huruf 3 angka + spasi + 3 huruf 2 angka
             let regexBaku = /^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/;
 
             if (!regexBaku.test(pengguna)) {
                 errorInput("pengguna", "Format pendaftar salah! Contoh: RW IA401 WAC01");
+                return;
+            }
+
+            // CEK DUPLIKASI DATA PENDAFTAR
+            let sudahAda = semuaData.some(function (item) {
+                return (item.pengguna || "").trim().toUpperCase() === pengguna.trim().toUpperCase();
+            });
+
+            if (sudahAda) {
+                errorInput("pengguna", "⚠️ Pendaftar ini telah terdaftar!");
                 return;
             }
 
