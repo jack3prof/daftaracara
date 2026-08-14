@@ -436,16 +436,16 @@
         const API = "https://script.google.com/macros/s/AKfycbxscpgNrYHw3vOmPbqYbnpbBM0RTPuiXYGA8YpTEwh8_qUOP7Z1gJmqt8gAOZUsHk2Q/exec";
 
         const POPULASI = {
-            "BA": 15,
-            "BI": 4,
-            "GA": 14,
-            "MA": 3,
-            "PR": 9,
-            "RG": 10,
-            "RW": 12,
-            "SA": 16,
-            "SL": 5,
-            "SU": 8
+            "BA": 104,
+            "BI": 31,
+            "GA": 105,
+            "MA": 20,
+            "PR": 66,
+            "RG": 64,
+            "RW": 86,
+            "SA": 111,
+            "SL": 45,
+            "SU": 59
         };
 
         const TOTAL_POPULASI = Object.values(POPULASI).reduce((a, b) => a + b, 0);
@@ -668,7 +668,7 @@
             // -------------------------------------------------------------
             let listLokal = ambilMemoryLokal();
             if (listLokal.includes(penggunaClean)) {
-                errorInput("pengguna", "⚠️ Perangkat ini mencatat ID pendaftar sudah terinput!");
+                errorInput("pengguna", "Data yang diinput telah ada");
                 return;
             }
 
@@ -680,9 +680,9 @@
             });
 
             if (sudahAdaDiServer) {
-                errorInput("pengguna", "⚠️ Pendaftar ini telah terdaftar di database!");
                 // Sekalian tambahkan ke memory lokal gadget jika belum ada
                 simpanKeMemoryLokal(penggunaClean);
+                errorInput("pengguna", "Data yang diinput telah ada");
                 return;
             }
 
