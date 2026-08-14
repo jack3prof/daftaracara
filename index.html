@@ -1,375 +1,72 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Acara</title>
-
     <style>
-        /* =========================
-           RESET
-        ========================= */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: Roboto, Arial, sans-serif;
-            background: #f1f5f9;
-            color: #1e293b;
-            min-height: 100vh;
-        }
-
-        /* =========================
-           HEADER
-        ========================= */
-        .header {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background: #1565c0;
-            color: white;
-            padding: 16px;
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
-        }
-
-        /* =========================
-           CONTAINER
-        ========================= */
-        .container {
-            max-width: 600px;
-            margin: auto;
-            padding: 12px;
-        }
-
-        /* =========================
-           CARD
-        ========================= */
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 14px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
-        }
-
-        /* =========================
-           FORM
-        ========================= */
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #475569;
-        }
-
-        .sub-label {
-            display: block;
-            font-size: 12px;
-            color: #64748b;
-            margin-top: -3px;
-            margin-bottom: 10px;
-        }
-
-        input {
-            width: 100%;
-            padding: 13px;
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            font-size: 16px;
-            margin-bottom: 14px;
-            outline: none;
-        }
-
-        input:focus {
-            border-color: #1565c0;
-            box-shadow: 0 0 0 2px rgba(21, 101, 192, .15);
-        }
-
-        input.error {
-            border-color: red;
-        }
-
-        /* =========================
-           RADIO / CONFIRMATION BUTTONS
-        ========================= */
-        .radio-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        .radio-btn {
-            position: relative;
-        }
-
-        .radio-btn input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .radio-label {
-            display: block;
-            text-align: center;
-            padding: 12px;
-            background: #f8fafc;
-            border: 2px solid #cbd5e1;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-bottom: 0;
-        }
-
-        .radio-btn input[type="radio"]:checked + .radio-label {
-            background: #e0e7ff;
-            border-color: #1565c0;
-            color: #1565c0;
-        }
-
-        /* =========================
-           BUTTON
-        ========================= */
-        button {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            background: #1565c0;
-            color: white;
-            font-size: 17px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        button:disabled {
-            background: #94a3b8;
-        }
-
-        /* =========================
-           REKAP SEKTOR & TOTAL
-        ========================= */
-        .rekap-box {
-            margin-bottom: 12px;
-            padding: 12px;
-            background: #f1f5f9;
-            border-radius: 10px;
-            font-size: 13px;
-        }
-
-        .rekap-title {
-            font-weight: bold;
-            margin-bottom: 6px;
-            color: #334155;
-        }
-
-        .rekap-content {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .rekap-item {
-            font-weight: bold;
-            color: #1565c0;
-        }
-
-        .rekap-total {
-            font-weight: bold;
-            color: #0f172a;
-            border-left: 2px solid #cbd5e1;
-            padding-left: 6px;
-            margin-left: 2px;
-        }
-
-        .rekap-ya {
-            color: #16a34a;
-        }
-
-        .rekap-tidak {
-            color: #dc2626;
-        }
-
-        /* =========================
-           SEARCH
-        ========================= */
-        .search {
-            margin-bottom: 10px;
-        }
-
-        /* =========================
-           TABLE
-        ========================= */
-        .table-wrap {
-            overflow: auto;
-            max-height: 400px;
-            border-radius: 10px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        thead {
-            position: sticky;
-            top: 0;
-            z-index: 5;
-        }
-
-        th {
-            background: #1565c0;
-            color: white;
-            padding: 10px;
-            text-align: left;
-        }
-
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        tr:nth-child(even) {
-            background: #f8fafc;
-        }
-
-        /* =========================
-           LOADING
-        ========================= */
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 15px;
-        }
-
-        .spinner {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            border: 4px solid #ddd;
-            border-top-color: #1565c0;
-            animation: spin 1s linear infinite;
-            margin: auto;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* =========================
-           SNACKBAR
-        ========================= */
-        .snackbar {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 20px;
-            display: none;
-            z-index: 100;
-            font-size: 14px;
-        }
-
-        /* =========================
-           DARK MODE
-        ========================= */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Roboto, Arial, sans-serif; background: #f1f5f9; color: #1e293b; min-height: 100vh; }
+        .header { position: sticky; top: 0; z-index: 20; background: #1565c0; color: white; padding: 16px; text-align: center; font-size: 22px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+        .container { max-width: 650px; margin: auto; padding: 12px; }
+        .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: 0 3px 10px rgba(0,0,0,.08); }
+        label { display: block; margin-bottom: 5px; font-size: 14px; color: #475569; }
+        .sub-label { display: block; font-size: 12px; color: #64748b; margin-top: -3px; margin-bottom: 10px; }
+        input { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 16px; margin-bottom: 14px; outline: none; }
+        input:focus { border-color: #1565c0; box-shadow: 0 0 0 2px rgba(21, 101, 192, .15); }
+        input.error { border-color: red; }
+        .radio-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        .radio-btn { position: relative; }
+        .radio-btn input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+        .radio-label { display: block; text-align: center; padding: 12px; background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 10px; font-weight: bold; cursor: pointer; transition: all .2s ease; margin-bottom: 0; }
+        .radio-btn input[type="radio"]:checked + .radio-label { background: #e0e7ff; border-color: #1565c0; color: #1565c0; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 12px; background: #1565c0; color: white; font-size: 17px; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #94a3b8; }
+        .rekap-box { margin-bottom: 12px; padding: 12px; background: #f1f5f9; border-radius: 10px; font-size: 13px; }
+        .rekap-title { font-weight: bold; margin-bottom: 6px; color: #334155; }
+        .rekap-content { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        .rekap-item { font-weight: bold; color: #1565c0; }
+        .rekap-total { font-weight: bold; color: #0f172a; border-left: 2px solid #cbd5e1; padding-left: 6px; margin-left: 2px; }
+        .rekap-ya { color: #16a34a; }
+        .rekap-tidak { color: #dc2626; }
+        .search { margin-bottom: 10px; }
+        .table-wrap { overflow: auto; max-height: 400px; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead { position: sticky; top: 0; z-index: 5; }
+        th { background: #1565c0; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .waktu-col { font-size: 12px; color: #64748b; white-space: nowrap; }
+        .loading { display: none; text-align: center; padding: 15px; }
+        .spinner { width: 30px; height: 30px; border-radius: 50%; border: 4px solid #ddd; border-top-color: #1565c0; animation: spin 1s linear infinite; margin: auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .snackbar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 20px; border-radius: 20px; display: none; z-index: 100; font-size: 14px; max-width: 90%; text-align: center; }
+        
         @media(prefers-color-scheme:dark) {
-            body {
-                background: #0f172a;
-                color: white;
-            }
-
-            .card {
-                background: #1e293b;
-            }
-
-            input {
-                background: #334155;
-                color: white;
-                border-color: #475569;
-            }
-
-            label {
-                color: #cbd5e1;
-            }
-
-            .sub-label {
-                color: #94a3b8;
-            }
-
-            .radio-label {
-                background: #334155;
-                border-color: #475569;
-                color: white;
-            }
-
-            .radio-btn input[type="radio"]:checked + .radio-label {
-                background: #1e3a8a;
-                border-color: #60a5fa;
-                color: white;
-            }
-
-            .rekap-box {
-                background: #334155;
-            }
-
-            .rekap-title {
-                color: #cbd5e1;
-            }
-
-            .rekap-item {
-                color: #60a5fa;
-            }
-
-            .rekap-total {
-                color: #f8fafc;
-                border-left-color: #475569;
-            }
-
-            .rekap-ya {
-                color: #4ade80;
-            }
-
-            .rekap-tidak {
-                color: #f87171;
-            }
-
-            td {
-                color: white;
-            }
-
-            tr:nth-child(even) {
-                background: #334155;
-            }
+            body { background: #0f172a; color: white; }
+            .card { background: #1e293b; }
+            input { background: #334155; color: white; border-color: #475569; }
+            label { color: #cbd5e1; }
+            .sub-label { color: #94a3b8; }
+            .radio-label { background: #334155; border-color: #475569; color: white; }
+            .radio-btn input[type="radio"]:checked + .radio-label { background: #1e3a8a; border-color: #60a5fa; color: white; }
+            .rekap-box { background: #334155; }
+            .rekap-title { color: #cbd5e1; }
+            .rekap-item { color: #60a5fa; }
+            .rekap-total { color: #f8fafc; border-left-color: #475569; }
+            .rekap-ya { color: #4ade80; }
+            .rekap-tidak { color: #f87171; }
+            td { color: white; }
+            tr:nth-child(even) { background: #334155; }
+            .waktu-col { color: #94a3b8; }
         }
     </style>
 </head>
-
 <body>
 
-    <div class="header">
-        Pendaftaran Acara
-    </div>
+    <div class="header">Pendaftaran Acara</div>
 
     <div class="container">
-
-        <!-- FORM INPUT -->
         <div class="card">
             <label for="pengguna">Pendaftar - ID_Sektor ID_Kelas ID_Anggota</label>
             <span class="sub-label">Contoh: RW IA401 WAC01</span>
@@ -387,8 +84,7 @@
                 </div>
             </div>
 
-            <!-- FIELD KETERANGAN BILA TIDAK -->
-            <div id="boxKeterangan" style="display: none;">
+            <div id="boxKeterangan" style="display:none;">
                 <label for="keterangan">Keterangan bila TIDAK</label>
                 <input id="keterangan" type="text" placeholder="Alasan tidak hadir">
             </div>
@@ -396,9 +92,7 @@
             <button id="btnSimpan" onclick="simpan()">Simpan</button>
         </div>
 
-        <!-- DATA TABLE & REKAP -->
         <div class="card">
-            <!-- REKAP PENDAFTAR -->
             <div class="rekap-box">
                 <div class="rekap-title">Rekap pendaftar</div>
                 <div class="rekap-content" id="rekapContent"></div>
@@ -415,6 +109,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>Waktu Input</th>
                             <th>Pendaftar</th>
                             <th>Konfirmasi</th>
                         </tr>
@@ -423,350 +118,254 @@
                 </table>
             </div>
         </div>
-
     </div>
 
-    <!-- SNACKBAR -->
     <div class="snackbar" id="snackbar"></div>
 
     <script>
-        // =========================
-        // KONFIGURASI API & POPULASI
-        // =========================
+        const SPREADSHEET_ID = "1GHtPX-M-vmMGp_OPe_HL0uaKoGvNh_4yfK3zmhIGpO0";
+        const SHEET_NAME = "data";
         const API = "https://script.google.com/macros/s/AKfycbxscpgNrYHw3vOmPbqYbnpbBM0RTPuiXYGA8YpTEwh8_qUOP7Z1gJmqt8gAOZUsHk2Q/exec";
 
-        const POPULASI = {
-            "BA": 15,
-            "BI": 4,
-            "GA": 14,
-            "MA": 3,
-            "PR": 9,
-            "RG": 10,
-            "RW": 12,
-            "SA": 16,
-            "SL": 5,
-            "SU": 8
-        };
-
+        const POPULASI = { "BA": 15, "BI": 4, "GA": 14, "MA": 3, "PR": 9, "RG": 10, "RW": 12, "SA": 16, "SL": 5, "SU": 8 };
         const TOTAL_POPULASI = Object.values(POPULASI).reduce((a, b) => a + b, 0);
-
+        const LOCAL_STORAGE_KEY = "pendaftar_tersimpan_local";
         let semuaData = [];
 
-        // Key untuk Local Storage di Browser Gadget
-        const LOCAL_STORAGE_KEY = "pendaftar_tersimpan_local";
-
-        // =========================
-        // MANAJEMEN LOCAL STORAGE GADGET
-        // =========================
         function ambilMemoryLokal() {
-            let dataLokal = localStorage.getItem(LOCAL_STORAGE_KEY);
-            return dataLokal ? JSON.parse(dataLokal) : [];
+            try {
+                const data = localStorage.getItem(LOCAL_STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) { return []; }
         }
 
         function simpanKeMemoryLokal(pengguna) {
-            let listLokal = ambilMemoryLokal();
-            let pClean = pengguna.trim().toUpperCase();
-            if (!listLokal.includes(pClean)) {
-                listLokal.push(pClean);
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(listLokal));
+            let data = ambilMemoryLokal();
+            const clean = pengguna.trim().toUpperCase();
+            if (!data.includes(clean)) {
+                data.push(clean);
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
             }
         }
 
-        // =========================
-        // SAAT HALAMAN DIBUKA
-        // =========================
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", () => {
+            const input = document.getElementById("pengguna");
+            input.addEventListener("input", function() { this.value = this.value.toUpperCase(); });
+            input.addEventListener("blur", function() { this.value = bersihkanPengguna(this.value); });
             loadData();
-
-            const inputPengguna = document.getElementById("pengguna");
-
-            // 1. Auto-uppercase saat pengguna mengetik
-            inputPengguna.addEventListener("input", function () {
-                this.value = this.value.toUpperCase();
-            });
-
-            // 2. Perbaiki spasi otomatis saat selesai mengetik (pindah fokus / blur)
-            inputPengguna.addEventListener("blur", function () {
-                this.value = bersihkanPengguna(this.value);
-            });
         });
 
-        // =========================
-        // AUTO-FIX SPASI & UPPERCASE
-        // =========================
         function bersihkanPengguna(inputRaw) {
             let bersih = inputRaw.replace(/\s+/g, "").toUpperCase();
-            let regexPola = /^([A-Z]{2})([A-Z]{2}[0-9]{3})([A-Z]{3}[0-9]{2})$/;
-            let match = bersih.match(regexPola);
-
-            if (match) {
-                return `${match[1]} ${match[2]} ${match[3]}`;
-            }
-
-            return inputRaw.toUpperCase();
+            const match = bersih.match(/^([A-Z]{2})([A-Z]{2}[0-9]{3})([A-Z]{3}[0-9]{2})$/);
+            return match ? `${match[1]} ${match[2]} ${match[3]}` : inputRaw.toUpperCase();
         }
 
-        // =========================
-        // TOGGLE INPUT KETERANGAN
-        // =========================
         function toggleKeterangan() {
-            const isTidak = document.getElementById("tidak").checked;
-            const box = document.getElementById("boxKeterangan");
-            box.style.display = isTidak ? "block" : "none";
-
-            if (!isTidak) {
-                document.getElementById("keterangan").value = "";
-            }
+            const tidak = document.getElementById("tidak").checked;
+            document.getElementById("boxKeterangan").style.display = tidak ? "block" : "none";
+            if (!tidak) document.getElementById("keterangan").value = "";
         }
 
-        // =========================
-        // AMBIL DATA (SISI SERVER / GADGET LAIN)
-        // =========================
         async function loadData() {
             tampilLoading(true);
-
             try {
-                const response = await fetch(API + "?action=list");
-                semuaData = await response.json();
+                const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                
+                const text = await response.text();
+                const jsonText = text.replace(/^\s*\/\*O_o\*\/\s*/, "").replace(/^google\.visualization\.Query\.setResponse\(/, "").replace(/\);\s*$/, "");
+                const json = JSON.parse(jsonText);
+
+                if (!json.table || !json.table.rows) throw new Error("Format data Google Sheet tidak valid");
+
+                semuaData = json.table.rows.map(row => {
+                    const cells = row.c || [];
+                    return {
+                        pengguna: ambilCell(cells, 0),
+                        konfirmasi: ambilCell(cells, 1),
+                        keterangan: ambilCell(cells, 2),
+                        waktuInput: ambilWaktu(cells, 3)
+                    };
+                }).filter(r => r.pengguna || r.konfirmasi || r.keterangan || r.waktuInput);
+
+                semuaData.reverse();
                 tampilTabel(semuaData);
                 tampilRekap(semuaData);
-            } catch (e) {
-                snackbar("Gagal mengambil data");
-                console.error(e);
+            } catch (error) {
+                console.error("Gagal membaca Google Sheet:", error);
+                semuaData = [];
+                tampilTabel([]);
+                tampilRekap([]);
+                snackbar("Gagal membaca Google Sheet");
             }
-
             tampilLoading(false);
         }
 
-        // =========================
-        // TAMPIL REKAP SEKTOR & TOTAL
-        // =========================
+        function ambilCell(cells, index) {
+            if (!cells[index]) return "";
+            return cells[index].f !== undefined && cells[index].f !== null ? String(cells[index].f) :
+                   cells[index].v !== undefined && cells[index].v !== null ? String(cells[index].v) : "";
+        }
+
+        function ambilWaktu(cells, index) {
+            if (!cells[index]) return "";
+            return cells[index].f ? String(cells[index].f) : cells[index].v ? String(cells[index].v) : "";
+        }
+
         function tampilRekap(data) {
-            let rekapMap = {};
-            let totalSemua = 0;
-            let totalYa = 0;
-            let totalTidak = 0;
-
+            let rekapMap = {}, totalSemua = 0, totalYa = 0, totalTidak = 0;
             if (Array.isArray(data)) {
-                data.forEach(function (r) {
-                    let pengguna = (r.pengguna || "").trim();
-
+                data.forEach(r => {
+                    const pengguna = (r.pengguna || "").trim();
                     if (pengguna.length >= 2) {
-                        let kode = pengguna.substring(0, 2).toUpperCase();
+                        const kode = pengguna.substring(0, 2).toUpperCase();
                         rekapMap[kode] = (rekapMap[kode] || 0) + 1;
                         totalSemua++;
                     }
-
-                    let statusKonfirmasi = (r.konfirmasi || r.acara || "").toUpperCase().trim();
-                    if (statusKonfirmasi === "YA") {
-                        totalYa++;
-                    } else if (statusKonfirmasi === "TIDAK") {
-                        totalTidak++;
-                    }
+                    const status = (r.konfirmasi || "").trim().toUpperCase();
+                    if (status === "YA") totalYa++;
+                    else if (status === "TIDAK") totalTidak++;
                 });
             }
 
-            let sortedKeys = Object.keys(POPULASI).sort();
+            let html = Object.keys(POPULASI).sort().map(key => {
+                const jumlah = rekapMap[key] || 0;
+                const populasi = POPULASI[key] || 0;
+                const persen = populasi > 0 ? (jumlah / populasi * 100).toFixed(0) : 0;
+                return `<span class="rekap-item">[${key} = ${jumlah}/${populasi} (${persen}%)]</span> `;
+            }).join("");
 
-            let html = "";
-            sortedKeys.forEach(function (key) {
-                let pendaftar = rekapMap[key] || 0;
-                let pop = POPULASI[key] || 0;
-                let persen = pop > 0 ? ((pendaftar / pop) * 100).toFixed(0) : 0;
-
-                html += `<span class="rekap-item">[${key} = ${pendaftar}/${pop} (${persen}%)]</span> `;
-            });
-
-            let persenTotal = TOTAL_POPULASI > 0 ? ((totalSemua / TOTAL_POPULASI) * 100).toFixed(1) : 0;
-            let persenYa = TOTAL_POPULASI > 0 ? ((totalYa / TOTAL_POPULASI) * 100).toFixed(0) : 0;
+            const persenTotal = TOTAL_POPULASI > 0 ? (totalSemua / TOTAL_POPULASI * 100).toFixed(1) : 0;
+            const persenYa = TOTAL_POPULASI > 0 ? (totalYa / TOTAL_POPULASI * 100).toFixed(0) : 0;
 
             html += `
                 <span class="rekap-total">[Total = ${totalSemua}/${TOTAL_POPULASI} (${persenTotal}%)]</span>
                 <span class="rekap-total rekap-ya">[YA = ${totalYa} (${persenYa}%)]</span>
                 <span class="rekap-total rekap-tidak">[TIDAK = ${totalTidak}]</span>
             `;
-
             document.getElementById("rekapContent").innerHTML = html;
         }
 
-        // =========================
-        // TAMPIL TABEL
-        // =========================
         function tampilTabel(data) {
             let html = "";
-
             if (!Array.isArray(data) || data.length === 0) {
-                html = `
-                <tr>
-                    <td colspan="2" style="text-align:center">Tidak ada data</td>
-                </tr>`;
+                html = `<tr><td colspan="3" style="text-align:center">Tidak ada data</td></tr>`;
             } else {
-                data.forEach(function (r) {
-                    let statusKonfirmasi = aman(r.konfirmasi || r.acara || "");
-                    let ket = aman(r.keterangan || "");
-
-                    let tampilStatus = statusKonfirmasi;
-                    if (statusKonfirmasi === "TIDAK" && ket) {
-                        tampilStatus += ` (${ket})`;
-                    }
+                data.forEach(r => {
+                    const timestamp = aman(r.waktuInput || "-");
+                    const pengguna = aman(r.pengguna || "");
+                    const konfirmasi = aman(r.konfirmasi || "");
+                    const keterangan = aman(r.keterangan || "");
+                    let tampilStatus = (r.konfirmasi || "").toUpperCase().trim() === "TIDAK" && keterangan ? `${konfirmasi} (${keterangan})` : konfirmasi;
 
                     html += `
-                    <tr>
-                        <td>${aman(r.pengguna)}</td>
-                        <td>${tampilStatus}</td>
-                    </tr>`;
+                        <tr>
+                            <td class="waktu-col">${timestamp}</td>
+                            <td>${pengguna}</td>
+                            <td>${tampilStatus}</td>
+                        </tr>
+                    `;
                 });
             }
-
             document.getElementById("tabelData").innerHTML = html;
         }
 
-        // =========================
-        // FILTER PENCARIAN
-        // =========================
         function filterData() {
-            let keyword = document.getElementById("cari").value.toLowerCase();
-
-            let hasil = semuaData.filter(function (r) {
-                let pendaftar = (r.pengguna || "").toLowerCase();
-                let konfirmasi = (r.konfirmasi || r.acara || "").toLowerCase();
-                let ket = (r.keterangan || "").toLowerCase();
-
-                return (
-                    pendaftar.includes(keyword) ||
-                    konfirmasi.includes(keyword) ||
-                    ket.includes(keyword)
-                );
-            });
-
+            const keyword = document.getElementById("cari").value.toLowerCase();
+            const hasil = semuaData.filter(r => 
+                (r.pengguna || "").toLowerCase().includes(keyword) ||
+                (r.konfirmasi || "").toLowerCase().includes(keyword) ||
+                (r.keterangan || "").toLowerCase().includes(keyword) ||
+                (r.waktuInput || "").toLowerCase().includes(keyword)
+            );
             tampilTabel(hasil);
             tampilRekap(hasil);
         }
 
-        // =========================
-        // SIMPAN DATA (DENGAN CEK MEMORY LOKAL & APPS SCRIPT)
-        // =========================
         async function simpan() {
-            let inputEl = document.getElementById("pengguna");
+            const inputEl = document.getElementById("pengguna");
+            const pengguna = bersihkanPengguna(inputEl.value);
+            inputEl.value = pengguna;
 
-            // Auto-fix format spasi & uppercase sebelum dikirim
-            let pengguna = bersihkanPengguna(inputEl.value);
-            inputEl.value = pengguna; 
-
-            // Regex baku: 2 huruf + spasi + 2 huruf 3 angka + spasi + 3 huruf 2 angka
-            let regexBaku = /^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/;
-
-            if (!regexBaku.test(pengguna)) {
+            if (!/^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/.test(pengguna)) {
                 errorInput("pengguna", "Format pendaftar salah! Contoh: RW IA401 WAC01");
                 return;
             }
 
-            let penggunaClean = pengguna.trim().toUpperCase();
-
-            // -------------------------------------------------------------
-            // CEK 1: MENGGUNAKAN MEMORY LOKAL GADGET (localStorage)
-            // -------------------------------------------------------------
-            let listLokal = ambilMemoryLokal();
-            if (listLokal.includes(penggunaClean)) {
+            const penggunaClean = pengguna.trim().toUpperCase();
+            if (ambilMemoryLokal().includes(penggunaClean)) {
                 errorInput("pengguna", "Data yang diinput telah ada");
                 return;
             }
 
-            // -------------------------------------------------------------
-            // CEK 2: MENGGUNAKAN TABEL APPS SCRIPT (Mencegah dari Gadget Lain)
-            // -------------------------------------------------------------
-            let sudahAdaDiServer = semuaData.some(function (item) {
-                return (item.pengguna || "").trim().toUpperCase() === penggunaClean;
-            });
-
-            if (sudahAdaDiServer) {
-                // Sekalian tambahkan ke memory lokal gadget jika belum ada
+            if (semuaData.some(item => (item.pengguna || "").trim().toUpperCase() === penggunaClean)) {
                 simpanKeMemoryLokal(penggunaClean);
                 errorInput("pengguna", "Data yang diinput telah ada");
                 return;
             }
 
-            let konfirmasi = document.querySelector('input[name="konfirmasi"]:checked').value;
-            let keterangan = document.getElementById("keterangan").value.trim();
+            const konfirmasi = document.querySelector('input[name="konfirmasi"]:checked').value;
+            const keterangan = document.getElementById("keterangan").value.trim();
 
             if (konfirmasi === "TIDAK" && keterangan === "") {
                 errorInput("keterangan", "Isi keterangan jika memilih TIDAK");
                 return;
             }
 
-            let tombol = document.getElementById("btnSimpan");
+            const sekarang = new Date();
+            const timestamp = sekarang.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" }) + " " +
+                              sekarang.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+
+            const tombol = document.getElementById("btnSimpan");
             tombol.disabled = true;
             tombol.innerHTML = "Menyimpan...";
 
             try {
-                const params = new URLSearchParams({
-                    action: "simpan",
-                    pengguna: pengguna,
-                    konfirmasi: konfirmasi,
-                    keterangan: keterangan
-                });
-
-                let response = await fetch(`${API}?${params.toString()}`);
-                let hasil = await response.json();
+                const params = new URLSearchParams({ action: "simpan", pengguna, konfirmasi, keterangan, timestamp });
+                const response = await fetch(`${API}?${params.toString()}`);
+                const hasil = await response.json();
 
                 if (hasil.success) {
-                    // SIMPAN KE MEMORY LOKAL GADGET SETELAH BERHASIL
                     simpanKeMemoryLokal(penggunaClean);
-
                     snackbar("Data berhasil disimpan");
                     document.getElementById("pengguna").value = "";
                     document.getElementById("keterangan").value = "";
                     document.getElementById("ya").checked = true;
                     toggleKeterangan();
-                    loadData();
+                    setTimeout(() => loadData(), 800);
                 } else {
                     snackbar(hasil.message || "Gagal menyimpan");
                 }
-
             } catch (e) {
-                snackbar("Server tidak merespon");
                 console.error(e);
+                snackbar("Server tidak merespon");
             }
-
             tombol.disabled = false;
             tombol.innerHTML = "Simpan";
         }
 
-        // =========================
-        // UTILITAS
-        // =========================
-        function tampilLoading(status) {
-            document.getElementById("loading").style.display = status ? "block" : "none";
-        }
-
+        function tampilLoading(status) { document.getElementById("loading").style.display = status ? "block" : "none"; }
+        
         function snackbar(text) {
-            let s = document.getElementById("snackbar");
-            s.innerHTML = text;
+            const s = document.getElementById("snackbar");
+            s.textContent = text;
             s.style.display = "block";
-
-            setTimeout(function () {
-                s.style.display = "none";
-            }, 2500);
+            setTimeout(() => { s.style.display = "none"; }, 2500);
         }
 
         function errorInput(id, msg) {
-            let el = document.getElementById(id);
+            const el = document.getElementById(id);
             el.classList.add("error");
             snackbar(msg);
-
-            setTimeout(function () {
-                el.classList.remove("error");
-            }, 2000);
+            setTimeout(() => { el.classList.remove("error"); }, 2000);
         }
 
         function aman(text) {
-            if (!text) return "";
-            return text
-                .toString()
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
+            if (text === null || text === undefined) return "";
+            return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
     </script>
 </body>
-
 </html>
