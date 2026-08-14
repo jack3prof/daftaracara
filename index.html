@@ -436,21 +436,41 @@
         const API = "https://script.google.com/macros/s/AKfycbxscpgNrYHw3vOmPbqYbnpbBM0RTPuiXYGA8YpTEwh8_qUOP7Z1gJmqt8gAOZUsHk2Q/exec";
 
         const POPULASI = {
-            "BA": 104,
-            "BI": 31,
-            "GA": 105,
-            "MA": 20,
-            "PR": 66,
-            "RG": 64,
-            "RW": 86,
-            "SA": 111,
-            "SL": 45,
-            "SU": 59
+            "BA": 17,
+            "BI": 6,
+            "GA": 17,
+            "MA": 5,
+            "PR": 10,
+            "RG": 12,
+            "RW": 14,
+            "SA": 16,
+            "SL": 7,
+            "SU": 10
         };
 
         const TOTAL_POPULASI = Object.values(POPULASI).reduce((a, b) => a + b, 0);
 
         let semuaData = [];
+
+        // Key untuk Local Storage di Browser Gadget
+        const LOCAL_STORAGE_KEY = "pendaftar_tersimpan_local";
+
+        // =========================
+        // MANAJEMEN LOCAL STORAGE GADGET
+        // =========================
+        function ambilMemoryLokal() {
+            let dataLokal = localStorage.getItem(LOCAL_STORAGE_KEY);
+            return dataLokal ? JSON.parse(dataLokal) : [];
+        }
+
+        function simpanKeMemoryLokal(pengguna) {
+            let listLokal = ambilMemoryLokal();
+            let pClean = pengguna.trim().toUpperCase();
+            if (!listLokal.includes(pClean)) {
+                listLokal.push(pClean);
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(listLokal));
+            }
+        }
 
         // =========================
         // SAAT HALAMAN DIBUKA
@@ -475,19 +495,15 @@
         // AUTO-FIX SPASI & UPPERCASE
         // =========================
         function bersihkanPengguna(inputRaw) {
-            // Hapus semua spasi liar dan ubah ke huruf besar
             let bersih = inputRaw.replace(/\s+/g, "").toUpperCase();
-
-            // Cek urutan karakter tanpa spasi: 2 huruf + 2 huruf 3 angka + 3 huruf 2 angka
             let regexPola = /^([A-Z]{2})([A-Z]{2}[0-9]{3})([A-Z]{3}[0-9]{2})$/;
             let match = bersih.match(regexPola);
 
             if (match) {
-                // Jika urutan karakter benar, format ulang spasinya: XX XX123 XXX12
                 return `${match[1]} ${match[2]} ${match[3]}`;
             }
 
-            return inputRaw.toUpperCase(); // Kembalikan nilai asli di-uppercase jika urutan karakter salah
+            return inputRaw.toUpperCase();
         }
 
         // =========================
@@ -504,7 +520,7 @@
         }
 
         // =========================
-        // AMBIL DATA
+        // AMBIL DATA (SISI SERVER / GADGET LAIN)
         // =========================
         async function loadData() {
             tampilLoading(true);
@@ -628,14 +644,14 @@
         }
 
         // =========================
-        // SIMPAN DATA
+        // SIMPAN DATA (DENGAN CEK MEMORY LOKAL & APPS SCRIPT)
         // =========================
         async function simpan() {
             let inputEl = document.getElementById("pengguna");
 
             // Auto-fix format spasi & uppercase sebelum dikirim
             let pengguna = bersihkanPengguna(inputEl.value);
-            inputEl.value = pengguna; // Tampilkan nilai hasil perbaikan di input
+            inputEl.value = pengguna; 
 
             // Regex baku: 2 huruf + spasi + 2 huruf 3 angka + spasi + 3 huruf 2 angka
             let regexBaku = /^[A-Z]{2}\s[A-Z]{2}[0-9]{3}\s[A-Z]{3}[0-9]{2}$/;
@@ -645,13 +661,28 @@
                 return;
             }
 
-            // CEK DUPLIKASI DATA PENDAFTAR
-            let sudahAda = semuaData.some(function (item) {
-                return (item.pengguna || "").trim().toUpperCase() === pengguna.trim().toUpperCase();
+            let penggunaClean = pengguna.trim().toUpperCase();
+
+            // -------------------------------------------------------------
+            // CEK 1: MENGGUNAKAN MEMORY LOKAL GADGET (localStorage)
+            // -------------------------------------------------------------
+            let listLokal = ambilMemoryLokal();
+            if (listLokal.includes(penggunaClean)) {
+                errorInput("pengguna", "⚠️ Perangkat ini mencatat ID pendaftar sudah terinput!");
+                return;
+            }
+
+            // -------------------------------------------------------------
+            // CEK 2: MENGGUNAKAN TABEL APPS SCRIPT (Mencegah dari Gadget Lain)
+            // -------------------------------------------------------------
+            let sudahAdaDiServer = semuaData.some(function (item) {
+                return (item.pengguna || "").trim().toUpperCase() === penggunaClean;
             });
 
-            if (sudahAda) {
-                errorInput("pengguna", "⚠️ Pendaftar ini telah terdaftar!");
+            if (sudahAdaDiServer) {
+                errorInput("pengguna", "⚠️ Pendaftar ini telah terdaftar di database!");
+                // Sekalian tambahkan ke memory lokal gadget jika belum ada
+                simpanKeMemoryLokal(penggunaClean);
                 return;
             }
 
@@ -679,6 +710,9 @@
                 let hasil = await response.json();
 
                 if (hasil.success) {
+                    // SIMPAN KE MEMORY LOKAL GADGET SETELAH BERHASIL
+                    simpanKeMemoryLokal(penggunaClean);
+
                     snackbar("Data berhasil disimpan");
                     document.getElementById("pengguna").value = "";
                     document.getElementById("keterangan").value = "";
