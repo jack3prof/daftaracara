@@ -76,7 +76,10 @@
         <div class="card">
             <label for="pengguna">Pendaftar - ID_Sektor ID_Kelas ID_Anggota</label>
             <span class="sub-label">Contoh: RW IA401 WAC01</span>
-            <input id="pengguna" type="text" placeholder="Contoh: RW IA401 WAC01" autocomplete="off">
+            
+            <!-- Tambahan list="listPendaftar" untuk menu pilihan dropdown -->
+            <input id="pengguna" type="text" placeholder="Contoh: RW IA401 WAC01" autocomplete="off" list="listPendaftar">
+            <datalist id="listPendaftar"></datalist>
 
             <label>Konfirmasi Kedatangan</label>
             <div class="radio-group">
@@ -148,9 +151,27 @@
         function simpanKeMemoryLokal(pengguna) {
             let data = ambilMemoryLokal();
             const clean = pengguna.trim().toUpperCase();
-            if (!data.includes(clean)) {
-                data.push(clean);
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+            
+            // Hapus jika sudah ada sebelumnya agar posisi terbaru selalu ada di paling belakang
+            data = data.filter(item => item !== clean);
+            data.push(clean);
+            
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+            updateDatalistOptions();
+        }
+
+        // Memperbarui opsi dropdown pilihan history & auto-fill input
+        function updateDatalistOptions() {
+            const memory = ambilMemoryLokal();
+            const datalist = document.getElementById("listPendaftar");
+            
+            // Mengisi opsi datalist pilihan history (diurutkan dari yang paling baru disimpan)
+            datalist.innerHTML = memory.slice().reverse().map(item => `<option value="${item}">`).join("");
+
+            // Auto-fill input dengan data isian paling terakhir
+            const input = document.getElementById("pengguna");
+            if (memory.length > 0 && !input.value) {
+                input.value = memory[memory.length - 1];
             }
         }
 
@@ -158,6 +179,8 @@
             const input = document.getElementById("pengguna");
             input.addEventListener("input", function() { this.value = this.value.toUpperCase(); });
             input.addEventListener("blur", function() { this.value = bersihkanPengguna(this.value); });
+            
+            updateDatalistOptions();
             loadData();
         });
 
@@ -301,11 +324,6 @@
             }
 
             const penggunaClean = pengguna.trim().toUpperCase();
-            if (ambilMemoryLokal().includes(penggunaClean)) {
-                errorInput("pengguna", "Data yang diinput telah ada");
-                return;
-            }
-
             if (semuaData.some(item => (item.pengguna || "").trim().toUpperCase() === penggunaClean)) {
                 simpanKeMemoryLokal(penggunaClean);
                 errorInput("pengguna", "Data yang diinput telah ada");
@@ -336,7 +354,6 @@
                 if (hasil.success) {
                     simpanKeMemoryLokal(penggunaClean);
                     snackbar("Data berhasil disimpan");
-                    document.getElementById("pengguna").value = "";
                     document.getElementById("keterangan").value = "";
                     document.getElementById("ya").checked = true;
                     toggleKeterangan();
