@@ -181,9 +181,11 @@
             },
             body: JSON.stringify(data)
         })
-        .then(() => {
-            alert("Data berhasil disimpan/diperbarui!");
-            muatDataSheet();
+		.then(() => {
+            // Tunggu 2 detik (2000 ms) sebelum memanggil muatDataSheet()
+            setTimeout(() => {
+                muatDataSheet();
+            }, 2000);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -191,7 +193,7 @@
         });
     }
 
-    // 3. Ambil dan Tampilkan Data ke Tabel & Form
+// 3. Ambil dan Tampilkan Data ke Tabel & Form
     function muatDataSheet() {
         fetch(GVIZ_URL)
             .then(response => response.text())
@@ -203,32 +205,89 @@
                 const tbody = document.getElementById('table-body');
                 tbody.innerHTML = '';
                 
+                // Ubah struktur header tabel rekapitulasi menjadi: No, Utusan, Jumlah
+                const theadTr = document.querySelector('#data-table thead tr');
+                theadTr.innerHTML = `
+                    <th>No</th>
+                    <th>Utusan</th>
+                    <th>Jumlah</th>
+                `;
+
                 if(!rows || rows.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada data tersimpan.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Belum ada data tersimpan.</td></tr>`;
                 } else {
-                    rows.forEach((row, index) => {
+                    let rawData = [];
+                    
+                    rows.forEach((row) => {
                         const kelompokVal = row.c[1] ? (row.c[1].v || '') : '';
                         const namaVal = row.c[2] ? (row.c[2].v || '') : '';
                         const ketVal = row.c[3] ? (row.c[3].v || '') : '';
 
                         if (!kelompokVal && !namaVal) return;
 
-                        // Masukkan data ke dalam Tabel Rekapitulasi
+                        // Gabungkan Wil 1, Wil 2, dan Wil 3 menjadi "Wil"
+                        let utusanFinal = ketVal;
+                        if (ketVal === 'Wil 1' || ketVal === 'Wil 2' || ketVal === 'Wil 3') {
+                            utusanFinal = 'Wil';
+                        }
+
+                        rawData.push({
+                            kelompok: kelompokVal,
+                            nama: namaVal,
+                            utusan: utusanFinal,
+                            utusanAsli: ketVal // Menyimpan keterangan asli untuk pencocokan form input
+                        });
+                    });
+
+                    // Agregasi / Hitung Jumlah berdasarkan Utusan
+                    let summaryMap = {};
+                    rawData.forEach(item => {
+                        let key = item.utusan;
+                        if (!summaryMap[key]) {
+                            summaryMap[key] = {
+                                utusan: key,
+                                jumlah: 0
+                            };
+                        }
+                        summaryMap[key].jumlah += 1;
+                    });
+
+                    // Ubah map menjadi array untuk diurutkan (Utusan Descending / Z-A)
+                    let summaryData = Object.values(summaryMap);
+                    
+                    summaryData.sort((a, b) => {
+                        return a.utusan.localeCompare(b.utusan, 'id', { sensitivity: 'base' });
+                    });
+
+                    // Variabel untuk menampung total keseluruhan jumlah
+                    let totalJumlah = 0;
+
+                    // Tampilkan data rekapitulasi yang sudah diringkas dan diurutkan
+                    summaryData.forEach((item, index) => {
+                        totalJumlah += item.jumlah; // Akumulasi total
                         let tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${index + 1}</td>
-                            <td><b>${kelompokVal}</b></td>
-                            <td>${namaVal}</td>
-                            <td>${ketVal}</td>
+                            <td><b>${item.utusan}</b></td>
+                            <td>${item.jumlah}</td>
                         `;
                         tbody.appendChild(tr);
+                    });
 
-                        // Masukkan data ke dalam Form Input jika sudah tersimpan di Spreadsheet
-                        const namaKelompokPure = kelompokVal.replace(/^Kelompok\s+/, '').trim();
-                        
+                    // Tambahkan baris Total di paling bawah tabel
+                    let trTotal = document.createElement('tr');
+                    trTotal.innerHTML = `
+                        <td colspan="2" style="text-align: right;"><b>Total Keseluruhan:</b></td>
+                        <td><b>${totalJumlah}</b></td>
+                    `;
+                    tbody.appendChild(trTotal);
+
+                    // Masukkan data ke dalam Form Input seperti semula
+                    rawData.forEach(item => {
+                        const namaKelompokPure = item.kelompok.replace(/^Kelompok\s+/, '').trim();
                         let inputIndex = null;
                         for (let key in namaKolom) {
-                            if (namaKolom[key] === ketVal) {
+                            if (namaKolom[key] === item.utusanAsli) {
                                 inputIndex = key;
                                 break;
                             }
@@ -237,7 +296,7 @@
                         if (inputIndex) {
                             const inputElement = document.getElementById(`input_${namaKelompokPure}_${inputIndex}`);
                             if (inputElement) {
-                                inputElement.value = namaVal;
+                                inputElement.value = item.nama;
                             }
                         }
                     });
@@ -251,6 +310,7 @@
                 document.getElementById('loading-status').innerText = 'Jazaakumulloh khoiron jazaa';
             });
     }
+
 
     // Jalankan saat halaman dimuat
     window.onload = async function() {
