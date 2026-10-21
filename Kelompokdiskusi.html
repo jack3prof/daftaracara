@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Nama Kelompok Diskusi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+        .grid-kelompok {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .card h4 {
+            margin-top: 0;
+            color: #007BFF;
+            text-align: center;
+            font-size: 13px;
+        }
+        .input-group {
+            margin-bottom: 8px;
+            display: flex;
+            gap: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        button {
+            padding: 6px 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 14px;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Kelompok Diskusi Tata kelola</h2>
+    <p style="text-align: center; font-size: 13px; color: #555;">24 Okt, 08.00 - Ashar</p>
+    
+    <!-- Bagian Form Input per Kelompok -->
+    <div class="grid-kelompok" id="form-container">
+        <!-- Generasi Form Kelompok secara dinamis via JS -->
+    </div>
+
+    <hr>
+
+    <h3>Rekapitulasi Data</h3>
+    <div id="loading-status" class="loading">Memuat data...</div>
+    <table id="data-table" style="display: none;">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Kelompok</th>
+                <th>Nama Anggota</th>
+                <th>Utusan</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <!-- Data dari Sheet akan dimasukkan di sini -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // --- KONFIGURASI URL ---
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxhO733RkF1HRKV-e3mICMxuhzZs1WPgX_gAPqTkxSaIN14Q0Xi9rf11eejaRY24XTe/exec";
+    const SPREADSHEET_ID = "1Ev2nlPPDYunwuQHulqFd3Z_-nTK9VPviOzc5doyPEGs";
+    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
+
+    const daftarKelompok = ['Ta’hil dan Taf’il MR & NQ', 'Taf’il BP', 'Jalasah imaniyah dan daurah', 'Kajian inspirasi Al Qur’an dan Fikrah', 'Kajian Rekrutmen dan Taqwim'];
+
+    const namaKolom = {
+        1: 'Wil 1',
+        2: 'Wil 2',
+        3: 'Wil 3',
+        4: 'BBG',
+        5: 'PRASAMA',
+        6: 'SLAGUN',
+        7: 'SURA'
+    };
+
+    // 1. Render Form Input
+    function renderForm() {
+        const container = document.getElementById('form-container');
+        let html = '';
+
+        daftarKelompok.forEach(kel => {
+            html += `<div class="card">
+                    <h4>Kelompok ${kel}</h4>`;
+            for (let i = 1; i <= 7; i++) {
+                const placeholderText = namaKolom[i] || `Anggota ${i}`;
+                html += `<div class="input-group">
+                            <input type="text" id="input_${kel}_${i}" placeholder="${placeholderText}">
+                            <button onclick="simpanNama('${kel}', ${i})">Simpan</button>
+                         </div>`;
+            }
+            html += `</div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    // 2. Fungsi Kirim Data ke Google Sheets
+    function simpanNama(kelompok, index) {
+        const inputId = `input_${kelompok}_${index}`;
+        const namaValue = document.getElementById(inputId).value.trim();
+
+        if (!namaValue) {
+            alert("Nama tidak boleh kosong!");
+            return;
+        }
+
+        const data = {
+            kelompok: `Kelompok ${kelompok}`,
+            index: index,
+            keterangan: namaKolom[index] || `Anggota ${index}`,
+            nama: namaValue
+        };
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            alert("Data berhasil disimpan/diperbarui!");
+            muatDataSheet();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Gagal menyimpan data.");
+        });
+    }
+
+    // 3. Ambil dan Tampilkan Data ke Tabel & Form
+    function muatDataSheet() {
+        fetch(GVIZ_URL)
+            .then(response => response.text())
+            .then(text => {
+                const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+                const jsonData = JSON.parse(jsonString);
+                
+                const rows = jsonData.table.rows;
+                const tbody = document.getElementById('table-body');
+                tbody.innerHTML = '';
+                
+                if(!rows || rows.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Belum ada data tersimpan.</td></tr>`;
+                } else {
+                    rows.forEach((row, index) => {
+                        const kelompokVal = row.c[1] ? (row.c[1].v || '') : '';
+                        const namaVal = row.c[2] ? (row.c[2].v || '') : '';
+                        const ketVal = row.c[3] ? (row.c[3].v || '') : '';
+
+                        if (!kelompokVal && !namaVal) return;
+
+                        // Masukkan data ke dalam Tabel Rekapitulasi
+                        let tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td><b>${kelompokVal}</b></td>
+                            <td>${namaVal}</td>
+                            <td>${ketVal}</td>
+                        `;
+                        tbody.appendChild(tr);
+
+                        // Masukkan data ke dalam Form Input jika sudah tersimpan di Spreadsheet
+                        const namaKelompokPure = kelompokVal.replace(/^Kelompok\s+/, '').trim();
+                        
+                        let inputIndex = null;
+                        for (let key in namaKolom) {
+                            if (namaKolom[key] === ketVal) {
+                                inputIndex = key;
+                                break;
+                            }
+                        }
+
+                        if (inputIndex) {
+                            const inputElement = document.getElementById(`input_${namaKelompokPure}_${inputIndex}`);
+                            if (inputElement) {
+                                inputElement.value = namaVal;
+                            }
+                        }
+                    });
+                }
+
+                document.getElementById('loading-status').style.display = 'none';
+                document.getElementById('data-table').style.display = 'table';
+            })
+            .catch(error => {
+                console.error('Gagal memuat data GViz:', error);
+                document.getElementById('loading-status').innerText = 'Jazaakumulloh khoiron jazaa';
+            });
+    }
+
+    // Jalankan saat halaman dimuat
+    window.onload = async function() {
+        renderForm();
+        await muatDataSheet();
+    };
+</script>
+
+</body>
+</html>
