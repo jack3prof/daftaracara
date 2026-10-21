@@ -132,7 +132,8 @@
         4: 'BBG',
         5: 'PRASAMA',
         6: 'SLAGUN',
-        7: 'SURA'
+        7: 'SURA',
+        8: 'Anggota 8'
     };
 
     // 1. Render Form Input
@@ -143,7 +144,7 @@
         daftarKelompok.forEach(kel => {
             html += `<div class="card">
                     <h4>Kelompok ${kel}</h4>`;
-            for (let i = 1; i <= 7; i++) {
+            for (let i = 1; i <= 8; i++) {
                 const placeholderText = namaKolom[i] || `Anggota ${i}`;
                 html += `<div class="input-group">
                             <input type="text" id="input_${kel}_${i}" placeholder="${placeholderText}">
