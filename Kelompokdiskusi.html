@@ -91,30 +91,31 @@
 
 <div class="container">
     <h2>Kelompok Diskusi Program/ Tata kelola</h2>
-    <p style="text-align: center; font-size: 13px; color: #555;">24 Okt, 08.00 - Ashar</p>
+    <p style="text-align: center; font-size: 13px; color: #555; margin-bottom: 25px;">24 Okt, 08.00 - Ashar</p>
     
-    <!-- Bagian Form Input per Kelompok -->
-    <div class="grid-kelompok" id="form-container">
-        <!-- Generasi Form Kelompok secara dinamis via JS -->
-    </div>
-
-    <hr>
-
+    <!-- Bagian Rekapitulasi Data di ATAS -->
     <h3>Rekapitulasi Data</h3>
     <div id="loading-status" class="loading">Memuat data...</div>
     <table id="data-table" style="display: none;">
         <thead>
             <tr>
                 <th>No</th>
-                <th>Kelompok</th>
-                <th>Nama Anggota</th>
                 <th>Utusan</th>
+                <th>Jumlah</th>
             </tr>
         </thead>
         <tbody id="table-body">
             <!-- Data dari Sheet akan dimasukkan di sini -->
         </tbody>
     </table>
+
+    <hr style="margin: 30px 0;">
+
+    <!-- Bagian Form Input per Kelompok di BAWAH -->
+    <h3>Form Input Anggota Kelompok</h3>
+    <div class="grid-kelompok" id="form-container">
+        <!-- Generasi Form Kelompok secara dinamis via JS -->
+    </div>
 </div>
 
 <script>
@@ -181,8 +182,8 @@
             },
             body: JSON.stringify(data)
         })
-		.then(() => {
-            // Tunggu 2 detik (2000 ms) sebelum memanggil muatDataSheet()
+        .then(() => {
+            // Tunggu 2 detik, lalu panggil muatDataSheet() (yang otomatis sudah ada perintah scroll top)
             setTimeout(() => {
                 muatDataSheet();
             }, 2000);
@@ -193,7 +194,7 @@
         });
     }
 
-// 3. Ambil dan Tampilkan Data ke Tabel & Form
+    // 3. Ambil dan Tampilkan Data ke Tabel & Form
     function muatDataSheet() {
         fetch(GVIZ_URL)
             .then(response => response.text())
@@ -205,7 +206,6 @@
                 const tbody = document.getElementById('table-body');
                 tbody.innerHTML = '';
                 
-                // Ubah struktur header tabel rekapitulasi menjadi: No, Utusan, Jumlah
                 const theadTr = document.querySelector('#data-table thead tr');
                 theadTr.innerHTML = `
                     <th>No</th>
@@ -225,7 +225,6 @@
 
                         if (!kelompokVal && !namaVal) return;
 
-                        // Gabungkan Wil 1, Wil 2, dan Wil 3 menjadi "Wil"
                         let utusanFinal = ketVal;
                         if (ketVal === 'Wil 1' || ketVal === 'Wil 2' || ketVal === 'Wil 3') {
                             utusanFinal = 'Wil';
@@ -235,11 +234,10 @@
                             kelompok: kelompokVal,
                             nama: namaVal,
                             utusan: utusanFinal,
-                            utusanAsli: ketVal // Menyimpan keterangan asli untuk pencocokan form input
+                            utusanAsli: ketVal
                         });
                     });
 
-                    // Agregasi / Hitung Jumlah berdasarkan Utusan
                     let summaryMap = {};
                     rawData.forEach(item => {
                         let key = item.utusan;
@@ -252,19 +250,15 @@
                         summaryMap[key].jumlah += 1;
                     });
 
-                    // Ubah map menjadi array untuk diurutkan (Utusan Descending / Z-A)
                     let summaryData = Object.values(summaryMap);
-                    
                     summaryData.sort((a, b) => {
                         return a.utusan.localeCompare(b.utusan, 'id', { sensitivity: 'base' });
                     });
 
-                    // Variabel untuk menampung total keseluruhan jumlah
                     let totalJumlah = 0;
 
-                    // Tampilkan data rekapitulasi yang sudah diringkas dan diurutkan
                     summaryData.forEach((item, index) => {
-                        totalJumlah += item.jumlah; // Akumulasi total
+                        totalJumlah += item.jumlah;
                         let tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${index + 1}</td>
@@ -274,7 +268,6 @@
                         tbody.appendChild(tr);
                     });
 
-                    // Tambahkan baris Total di paling bawah tabel
                     let trTotal = document.createElement('tr');
                     trTotal.innerHTML = `
                         <td colspan="2" style="text-align: right;"><b>Total Keseluruhan:</b></td>
@@ -282,7 +275,6 @@
                     `;
                     tbody.appendChild(trTotal);
 
-                    // Masukkan data ke dalam Form Input seperti semula
                     rawData.forEach(item => {
                         const namaKelompokPure = item.kelompok.replace(/^Kelompok\s+/, '').trim();
                         let inputIndex = null;
@@ -304,13 +296,15 @@
 
                 document.getElementById('loading-status').style.display = 'none';
                 document.getElementById('data-table').style.display = 'table';
+
+                // Otomatis scroll ke paling atas setiap kali data selesai dimuat/direfresh[cite: 1]
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             })
             .catch(error => {
                 console.error('Gagal memuat data GViz:', error);
                 document.getElementById('loading-status').innerText = 'Jazaakumulloh khoiron jazaa';
             });
     }
-
 
     // Jalankan saat halaman dimuat
     window.onload = async function() {
