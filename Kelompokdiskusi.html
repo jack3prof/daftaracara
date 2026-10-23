@@ -112,7 +112,7 @@
     <hr style="margin: 30px 0;">
 
     <!-- Bagian Form Input per Kelompok di BAWAH -->
-    <h3>Form Input Anggota Kelompok</h3>
+    <h3>Form Input Anggota Kelompok <br>untuk isian Anggota 8 dan 9, awali dengan nama zona</h3>
     <div class="grid-kelompok" id="form-container">
         <!-- Generasi Form Kelompok secara dinamis via JS -->
     </div>
@@ -134,7 +134,8 @@
         5: 'PRASAMA',
         6: 'SLAGUN',
         7: 'SURA',
-        8: 'Anggota 8'
+        8: 'Anggota 8',
+        9: 'Anggota 9'
     };
 
     // 1. Render Form Input
@@ -145,7 +146,7 @@
         daftarKelompok.forEach(kel => {
             html += `<div class="card">
                     <h4>Kelompok ${kel}</h4>`;
-            for (let i = 1; i <= 8; i++) {
+            for (let i = 1; i <= 9; i++) {
                 const placeholderText = namaKolom[i] || `Anggota ${i}`;
                 html += `<div class="input-group">
                             <input type="text" id="input_${kel}_${i}" placeholder="${placeholderText}">
@@ -226,8 +227,24 @@
                         if (!kelompokVal && !namaVal) return;
 
                         let utusanFinal = ketVal;
+                        
+                        // Pengelompokan Wil
                         if (ketVal === 'Wil 1' || ketVal === 'Wil 2' || ketVal === 'Wil 3') {
                             utusanFinal = 'Wil';
+                        }
+                        
+                        // Pengelompokan khusus Anggota 8 & Anggota 9 berdasarkan 2 huruf pertama nama
+                        if (ketVal === 'Anggota 8' || ketVal === 'Anggota 9') {
+                            const duaHuruf = namaVal.trim().substring(0, 2).toUpperCase();
+                            if (duaHuruf === 'BB') {
+                                utusanFinal = 'BBG';
+                            } else if (duaHuruf === 'SL') {
+                                utusanFinal = 'SLAGUN';
+                            } else if (duaHuruf === 'SU') {
+                                utusanFinal = 'SURA';
+                            } else if (duaHuruf === 'PR') {
+                                utusanFinal = 'PRASAMA';
+                            }
                         }
 
                         rawData.push({
