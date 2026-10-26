@@ -70,13 +70,12 @@
             gap: 10px;
             justify-content: center;
             margin-bottom: 15px;
-            background-color: #f1f3f5; /* Warna abu-abu muda */
+            background-color: #f1f3f5;
             padding: 15px;
             border-radius: 6px;
             border: 1px solid #e2e8f0;
         }
         
-        /* Sembunyikan panel kelas jika belum ada tombol di dalamnya (opsional agar rapi) */
         .kelas-list:empty {
             display: none;
         }
@@ -139,7 +138,6 @@
 <div class="container">
     <h2>Data Usia</h2>
     
-    <!-- Bagian Form Input Usia di ATAS -->
     <h3>Form Input Usia Anggota</h3>
     <p style="text-align: center; font-size: 13px; color: #555;">Pilih Sektor terlebih dahulu, lalu pilih Kelas.</p>
     
@@ -196,8 +194,8 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzoarRG4GLPJZaFIMxQj9GKNy86xjGiw349ZMbxD7fx163vu-BDmZSaaE4ylVDOPAQ6/exec"; // Ganti dengan URL Web App Anda
-    const SPREADSHEET_ID = "18758n9k6GWbOSk-K8RkG5bQrWHE2gqnSdwKVBBwCu60"; // Ganti dengan ID Spreadsheet Anda
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzoarRG4GLPJZaFIMxQj9GKNy86xjGiw349ZMbxD7fx163vu-BDmZSaaE4ylVDOPAQ6/exec"; 
+    const SPREADSHEET_ID = "18758n9k6GWbOSk-K8RkG5bQrWHE2gqnSdwKVBBwCu60"; 
     const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=data_usia`;
 
     // Data Master Lengkap
@@ -378,6 +376,11 @@
     let selectedSektor = null;
     let selectedKelas = null;
 
+    // Fungsi helper untuk membuat kunci unik gabungan
+    function getUniqueKey(sektor, kelas, anggota) {
+        return `${sektor}_${kelas}_${anggota}`;
+    }
+
     // Render Sektor List
     function renderSektorList() {
         const sekaSet = new Set(masterData.map(item => item.id_sektor));
@@ -437,11 +440,12 @@
             <h4 style="text-align:center;">Anggota Sektor ${sektor} - Kelas ${kelas}</h4>`;
         
         anggotaList.forEach(item => {
-            const currentUsia = dataUsiaMap[item.id_anggota] || '';
+            const uniqueKey = getUniqueKey(item.id_sektor, item.id_kelas, item.id_anggota);
+            const currentUsia = dataUsiaMap[uniqueKey] || '';
             html += `
                 <div class="input-group">
                     <label>${item.id_anggota}</label>
-                    <input type="number" id="input_usia_${item.id_anggota}" value="${currentUsia}" placeholder="Usia">
+                    <input type="number" id="input_usia_${item.id_sektor}_${item.id_kelas}_${item.id_anggota}" value="${currentUsia}" placeholder="Usia">
                     <button class="btn-simpan" onclick="simpanUsia('${item.id_sektor}', '${item.id_kelas}', '${item.id_anggota}')">Simpan</button>
                 </div>
             `;
@@ -452,7 +456,8 @@
 
     // Simpan Data Usia ke Apps Script
     function simpanUsia(sektor, kelas, idAnggota) {
-        const usiaInput = document.getElementById(`input_usia_${idAnggota}`).value;
+        const inputId = `input_usia_${sektor}_${kelas}_${idAnggota}`;
+        const usiaInput = document.getElementById(inputId).value;
         if (!usiaInput) {
             alert("Usia harus diisi!");
             return;
@@ -472,7 +477,7 @@
             body: JSON.stringify(payload)
         })
         .then(() => {
-            alert(`Berhasil menyimpan usia untuk ${idAnggota}`);
+            alert(`Berhasil menyimpan usia untuk ${idAnggota} (Sektor ${sektor}, Kelas ${kelas})`);
             setTimeout(() => {
                 muatDataSheet();
             }, 1500);
@@ -494,10 +499,14 @@
                 dataUsiaMap = {};
                 if (jsonData.table && jsonData.table.rows) {
                     jsonData.table.rows.forEach(row => {
+                        const sektor = row.c[0] ? row.c[0].v : null;
+                        const kelas = row.c[1] ? row.c[1].v : null;
                         const idAnggota = row.c[2] ? row.c[2].v : null;
                         const usia = row.c[3] ? row.c[3].v : null;
-                        if (idAnggota && usia !== null && usia !== undefined) {
-                            dataUsiaMap[idAnggota] = parseInt(usia);
+
+                        if (sektor && kelas && idAnggota && usia !== null && usia !== undefined) {
+                            const uniqueKey = getUniqueKey(sektor, kelas, idAnggota);
+                            dataUsiaMap[uniqueKey] = parseInt(usia);
                         }
                     });
                 }
@@ -541,7 +550,8 @@
             let kelUsia = { u25: 0, u26_30: 0, u31_35: 0, u36_45: 0, u46plus: 0 };
 
             anggotaSektor.forEach(item => {
-                const usia = dataUsiaMap[item.id_anggota];
+                const uniqueKey = getUniqueKey(item.id_sektor, item.id_kelas, item.id_anggota);
+                const usia = dataUsiaMap[uniqueKey];
                 if (usia !== undefined && usia !== null && !isNaN(usia)) {
                     terisi++;
                     if (usia < 25) kelUsia.u25++;
@@ -559,7 +569,7 @@
             totalKelompokUsia.u36_45 += kelUsia.u36_45;
             totalKelompokUsia.u46plus += kelUsia.u46plus;
 
-            const prosentase = ((terisi / totalAnggota) * 100).toFixed(1) + '%';
+            const prosentase = totalAnggota > 0 ? ((terisi / totalAnggota) * 100).toFixed(1) + '%' : '0.0%';
 
             // Row Rekap 1
             tbody1.innerHTML += `
@@ -585,7 +595,7 @@
         });
 
         // Row Total Rekap 1
-        const totalProsentase = ((totalTerisi / totalSeluruh) * 100).toFixed(1) + '%';
+        const totalProsentase = totalSeluruh > 0 ? ((totalTerisi / totalSeluruh) * 100).toFixed(1) + '%' : '0.0%';
         tbody1.innerHTML += `
             <tr style="font-weight: bold; background-color: #f2f2f2;">
                 <td>Total</td>
