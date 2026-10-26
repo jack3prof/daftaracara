@@ -54,13 +54,33 @@
             font-style: italic;
             color: #666;
         }
-        .sektor-list, .kelas-list {
+
+        .sektor-list {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             justify-content: center;
             margin-bottom: 15px;
         }
+        
+        /* Bagian kelas diberi background abu-abu muda dan border */
+        .kelas-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+            background-color: #f1f3f5; /* Warna abu-abu muda */
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        /* Sembunyikan panel kelas jika belum ada tombol di dalamnya (opsional agar rapi) */
+        .kelas-list:empty {
+            display: none;
+        }
+
         .btn-sektor, .btn-kelas {
             padding: 8px 16px;
             background-color: #6c757d;
