@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Usia</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+        .rekap-section {
+            margin-top: 20px;
+        }
+        /* Pembungkus tabel agar aman dan bisa digeser di HP */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 25px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            min-width: 450px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+        .sektor-list, .kelas-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .btn-sektor, .btn-kelas {
+            padding: 8px 16px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-sektor.active, .btn-kelas.active {
+            background-color: #007BFF;
+        }
+        .anggota-card {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 6px;
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+        }
+        .input-group {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .input-group label {
+            font-size: 14px;
+            font-weight: bold;
+            width: 100px;
+        }
+        input[type="number"] {
+            width: 120px;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        button.btn-simpan {
+            padding: 6px 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        button.btn-simpan:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Data Usia</h2>
+    
+    <!-- Bagian Form Input Usia di ATAS -->
+    <h3>Form Input Usia Anggota</h3>
+    <p style="text-align: center; font-size: 13px; color: #555;">Pilih Sektor terlebih dahulu, lalu pilih Kelas.</p>
+    
+    <!-- Step 1: List Sektor -->
+    <div class="sektor-list" id="sektor-container"></div>
+
+    <!-- Step 2: List Kelas (Urut Abjad) -->
+    <div class="kelas-list" id="kelas-container"></div>
+
+    <!-- Step 3: Form Usia Anggota -->
+    <div id="anggota-container"></div>
+
+    <hr style="margin: 30px 0;">
+
+    <!-- Bagian Rekapitulasi Data di BAWAH -->
+    <div class="rekap-section">
+        <h3>Rekapitulasi Pengisian Data</h3>
+        <div id="loading-status" class="loading">Memuat data rekap...</div>
+
+        <!-- Rekap 1: Prosentase Jumlah Pengisian -->
+        <h4>1. Rekap Prosentase Jumlah Pengisian per Sektor</h4>
+        <div class="table-responsive">
+            <table id="table-rekap-1" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Sektor</th>
+                        <th>Jumlah Terisi</th>
+                        <th>Total Anggota</th>
+                        <th>Prosentase Pengisian</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-rekap-1"></tbody>
+            </table>
+        </div>
+
+        <!-- Rekap 2: Distribusi Berdasar Usia -->
+        <h4>2. Rekap Distribusi Berdasar Usia</h4>
+        <div class="table-responsive">
+            <table id="table-rekap-2" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Sektor</th>
+                        <th>&lt;25</th>
+                        <th>26-30</th>
+                        <th>31-35</th>
+                        <th>36-45</th>
+                        <th>46&lt;</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-rekap-2"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzoarRG4GLPJZaFIMxQj9GKNy86xjGiw349ZMbxD7fx163vu-BDmZSaaE4ylVDOPAQ6/exec"; // Ganti dengan URL Web App Anda
+    const SPREADSHEET_ID = "18758n9k6GWbOSk-K8RkG5bQrWHE2gqnSdwKVBBwCu60"; // Ganti dengan ID Spreadsheet Anda
+    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=data_usia`;
+
+    // Data Master Lengkap
+    const masterData = [
+        {id_sektor:"BA", id_kelas:"AA301", id_anggota:"IAJ01"}, {id_sektor:"BA", id_kelas:"AA301", id_anggota:"SID01"},
+        {id_sektor:"BA", id_kelas:"AA301", id_anggota:"DKI01"}, {id_sektor:"BA", id_kelas:"AA301", id_anggota:"SNA01"},
+        {id_sektor:"BA", id_kelas:"AA301", id_anggota:"UAA01"}, {id_sektor:"BA", id_kelas:"AA301", id_anggota:"VAH01"},
+        {id_sektor:"BA", id_kelas:"AA301", id_anggota:"TAF01"}, {id_sektor:"BA", id_kelas:"AA301", id_anggota:"WUS01"},
+        {id_sektor:"BA", id_kelas:"AA301", id_anggota:"MRA01"}, {id_sektor:"GA", id_kelas:"AA301", id_anggota:"KVA01"},
+        {id_sektor:"GA", id_kelas:"AA301", id_anggota:"LIM01"}, {id_sektor:"GA", id_kelas:"AA301", id_anggota:"SAM02"},
+        {id_sektor:"GA", id_kelas:"AA301", id_anggota:"SWD01"}, {id_sektor:"GA", id_kelas:"AA301", id_anggota:"TES01"},
+        {id_sektor:"GA", id_kelas:"AA301", id_anggota:"SIL01"}, {id_sektor:"MA", id_kelas:"AA301", id_anggota:"ZAH01"},
+        {id_sektor:"MA", id_kelas:"AA301", id_anggota:"HAR01"}, {id_sektor:"MA", id_kelas:"AA301", id_anggota:"PAD01"},
+        {id_sektor:"MA", id_kelas:"AA301", id_anggota:"RLU01"}, {id_sektor:"MA", id_kelas:"AA301", id_anggota:"AID01"},
+        {id_sektor:"PR", id_kelas:"AA301", id_anggota:"FDI01"}, {id_sektor:"PR", id_kelas:"AA301", id_anggota:"HUN01"},
+        {id_sektor:"PR", id_kelas:"AA301", id_anggota:"AAF01"}, {id_sektor:"PR", id_kelas:"AA301", id_anggota:"QBA01"},
+        {id_sektor:"PR", id_kelas:"AA301", id_anggota:"HTE01"}, {id_sektor:"PR", id_kelas:"AA301", id_anggota:"KIR01"},
+        {id_sektor:"RG", id_kelas:"AA301", id_anggota:"YUN01"}, {id_sektor:"RG", id_kelas:"AA301", id_anggota:"UAM01"},
+        {id_sektor:"RG", id_kelas:"AA301", id_anggota:"DAF01"}, {id_sektor:"RG", id_kelas:"AA301", id_anggota:"EDA01"},
+        {id_sektor:"RG", id_kelas:"AA301", id_anggota:"ILU01"}, {id_sektor:"RG", id_kelas:"AA301", id_anggota:"SRI01"},
+        {id_sektor:"RG", id_kelas:"AA301", id_anggota:"DNA01"}, {id_sektor:"RW", id_kelas:"AA301", id_anggota:"ADE01"},
+        {id_sektor:"RW", id_kelas:"AA301", id_anggota:"FUN01"}, {id_sektor:"SA", id_kelas:"AA301", id_anggota:"YHC01"},
+        {id_sektor:"SA", id_kelas:"AA301", id_anggota:"ZIR01"}, {id_sektor:"SA", id_kelas:"AA301", id_anggota:"BEF01"},
+        {id_sektor:"SA", id_kelas:"AA301", id_anggota:"AEB01"}, {id_sektor:"SA", id_kelas:"AA301", id_anggota:"LUS02"},
+        {id_sektor:"SA", id_kelas:"AA301", id_anggota:"LAS02"}, {id_sektor:"SA", id_kelas:"AA301", id_anggota:"MUS01"},
+        {id_sektor:"SA", id_kelas:"AA301", id_anggota:"RAM01"}, {id_sektor:"SL", id_kelas:"AA301", id_anggota:"MNA01"},
+        {id_sektor:"SL", id_kelas:"AA301", id_anggota:"MON01"}, {id_sektor:"SL", id_kelas:"AA301", id_anggota:"PNY01"},
+        {id_sektor:"SL", id_kelas:"AA301", id_anggota:"TNE01"}, {id_sektor:"SL", id_kelas:"AA301", id_anggota:"SGA01"},
+        {id_sektor:"SL", id_kelas:"AA301", id_anggota:"HIL01"}, {id_sektor:"SL", id_kelas:"AA301", id_anggota:"DON01"},
+        {id_sektor:"SL", id_kelas:"AA301", id_anggota:"NAW01"}, {id_sektor:"SL", id_kelas:"AA301", id_anggota:"ASI01"},
+        {id_sektor:"SL", id_kelas:"AA301", id_anggota:"RED01"}, {id_sektor:"SU", id_kelas:"AA301", id_anggota:"AHK02"},
+        {id_sektor:"SU", id_kelas:"AA301", id_anggota:"SDI01"}, {id_sektor:"SU", id_kelas:"AA301", id_anggota:"PUN01"},
+        {id_sektor:"BA", id_kelas:"AA302", id_anggota:"AON01"}, {id_sektor:"BA", id_kelas:"AA302", id_anggota:"KIR01"},
+        {id_sektor:"BA", id_kelas:"AA302", id_anggota:"ALA01"}, {id_sektor:"BA", id_kelas:"AA302", id_anggota:"KUS01"},
+        {id_sektor:"BA", id_kelas:"AA302", id_anggota:"RSH01"}, {id_sektor:"BA", id_kelas:"AA302", id_anggota:"YIS01"},
+        {id_sektor:"BA", id_kelas:"AA302", id_anggota:"MIR01"}, {id_sektor:"BA", id_kelas:"AA302", id_anggota:"WAN01"},
+        {id_sektor:"BA", id_kelas:"AA302", id_anggota:"MSR01"}, {id_sektor:"GA", id_kelas:"AA302", id_anggota:"PYD01"},
+        {id_sektor:"GA", id_kelas:"AA302", id_anggota:"RLA01"}, {id_sektor:"GA", id_kelas:"AA302", id_anggota:"HIS01"},
+        {id_sektor:"GA", id_kelas:"AA302", id_anggota:"NUM01"}, {id_sektor:"MA", id_kelas:"AA302", id_anggota:"PAR01"},
+        {id_sektor:"MA", id_kelas:"AA302", id_anggota:"YEH01"}, {id_sektor:"MA", id_kelas:"AA302", id_anggota:"RPA01"},
+        {id_sektor:"MA", id_kelas:"AA302", id_anggota:"HYS01"}, {id_sektor:"MA", id_kelas:"AA302", id_anggota:"IKF01"},
+        {id_sektor:"PR", id_kelas:"AA302", id_anggota:"TUP01"}, {id_sektor:"PR", id_kelas:"AA302", id_anggota:"SIS01"},
+        {id_sektor:"PR", id_kelas:"AA302", id_anggota:"SIM01"}, {id_sektor:"PR", id_kelas:"AA302", id_anggota:"KIS01"},
+        {id_sektor:"PR", id_kelas:"AA302", id_anggota:"INA01"}, {id_sektor:"PR", id_kelas:"AA302", id_anggota:"HFF01"},
+        {id_sektor:"RG", id_kelas:"AA302", id_anggota:"AAR01"}, {id_sektor:"RG", id_kelas:"AA302", id_anggota:"FIR01"},
+        {id_sektor:"RG", id_kelas:"AA302", id_anggota:"DUN01"}, {id_sektor:"RG", id_kelas:"AA302", id_anggota:"DON01"},
+        {id_sektor:"RG", id_kelas:"AA302", id_anggota:"SIV01"}, {id_sektor:"SA", id_kelas:"AA302", id_anggota:"NUS01"},
+        {id_sektor:"SA", id_kelas:"AA302", id_anggota:"DNA01"}, {id_sektor:"SA", id_kelas:"AA302", id_anggota:"JUP01"},
+        {id_sektor:"SA", id_kelas:"AA302", id_anggota:"LUY02"}, {id_sektor:"SA", id_kelas:"AA302", id_anggota:"KMA01"},
+        {id_sektor:"BA", id_kelas:"AA303", id_anggota:"AMT01"}, {id_sektor:"BA", id_kelas:"AA303", id_anggota:"HAN01"},
+        {id_sektor:"PR", id_kelas:"AA303", id_anggota:"AKE01"}, {id_sektor:"PR", id_kelas:"AA303", id_anggota:"SIL01"},
+        {id_sektor:"PR", id_kelas:"AA303", id_anggota:"SUR01"}, {id_sektor:"PR", id_kelas:"AA303", id_anggota:"ANI01"},
+        {id_sektor:"SA", id_kelas:"AA303", id_anggota:"VER01"}, {id_sektor:"SA", id_kelas:"AA303", id_anggota:"PIL01"},
+        {id_sektor:"SA", id_kelas:"AA303", id_anggota:"AAF01"}, {id_sektor:"SA", id_kelas:"AA303", id_anggota:"PED02"},
+        {id_sektor:"SA", id_kelas:"AA303", id_anggota:"AIS01"}, {id_sektor:"SA", id_kelas:"AA303", id_anggota:"PED01"},
+        {id_sektor:"SL", id_kelas:"AA303", id_anggota:"MIS01"}, {id_sektor:"BA", id_kelas:"AA304", id_anggota:"SID02"},
+        {id_sektor:"BA", id_kelas:"AA304", id_anggota:"UMO01"}, {id_sektor:"BA", id_kelas:"AA304", id_anggota:"JUM01"},
+        {id_sektor:"BA", id_kelas:"AA304", id_anggota:"LRT01"}, {id_sektor:"BA", id_kelas:"AA304", id_anggota:"WED01"},
+        {id_sektor:"SA", id_kelas:"AA304", id_anggota:"NIL01"}, {id_sektor:"SA", id_kelas:"AA304", id_anggota:"SNE01"},
+        {id_sektor:"SA", id_kelas:"AA304", id_anggota:"WRE01"}, {id_sektor:"SA", id_kelas:"AA304", id_anggota:"DKM01"},
+        {id_sektor:"SA", id_kelas:"AA304", id_anggota:"LID01"}, {id_sektor:"SA", id_kelas:"AA304", id_anggota:"IAS01"},
+        {id_sektor:"SA", id_kelas:"AA304", id_anggota:"HYR01"}, {id_sektor:"SA", id_kelas:"AA304", id_anggota:"YUS01"},
+        {id_sektor:"SA", id_kelas:"AA304", id_anggota:"NWD01"}, {id_sektor:"BA", id_kelas:"AA305", id_anggota:"DSE01"},
+        {id_sektor:"SA", id_kelas:"AA305", id_anggota:"NRI01"}, {id_sektor:"SA", id_kelas:"AA305", id_anggota:"MIS01"},
+        {id_sektor:"SA", id_kelas:"AA305", id_anggota:"RHS01"}, {id_sektor:"SA", id_kelas:"AA305", id_anggota:"MRS01"},
+        {id_sektor:"SA", id_kelas:"AA306", id_anggota:"PEM01"}, {id_sektor:"SA", id_kelas:"AA306", id_anggota:"YPA01"},
+        {id_sektor:"SA", id_kelas:"AA306", id_anggota:"WNE01"}, {id_sektor:"SA", id_kelas:"AA306", id_anggota:"YAR01"},
+        {id_sektor:"SA", id_kelas:"AA306", id_anggota:"DHB01"}, {id_sektor:"SA", id_kelas:"AA307", id_anggota:"DIW01"},
+        {id_sektor:"SA", id_kelas:"AA307", id_anggota:"GIC01"}, {id_sektor:"SA", id_kelas:"AA307", id_anggota:"HAW01"},
+        {id_sektor:"SA", id_kelas:"AA307", id_anggota:"RUS01"}, {id_sektor:"SA", id_kelas:"AA307", id_anggota:"NAH01"},
+        {id_sektor:"SA", id_kelas:"AA307", id_anggota:"SKI01"}, {id_sektor:"SA", id_kelas:"AA307", id_anggota:"INA01"},
+        {id_sektor:"SA", id_kelas:"AA307", id_anggota:"KAZ01"}, {id_sektor:"SA", id_kelas:"AA308", id_anggota:"YVE02"},
+        {id_sektor:"SA", id_kelas:"AA308", id_anggota:"LUS03"}, {id_sektor:"SA", id_kelas:"AA308", id_anggota:"HRS02"},
+        {id_sektor:"SA", id_kelas:"AA308", id_anggota:"KIR02"}, {id_sektor:"SA", id_kelas:"AA308", id_anggota:"TAF02"},
+        {id_sektor:"BA", id_kelas:"AA401", id_anggota:"EAM01"}, {id_sektor:"BA", id_kelas:"AA401", id_anggota:"YSW01"},
+        {id_sektor:"BA", id_kelas:"AA401", id_anggota:"SIS01"}, {id_sektor:"BA", id_kelas:"AA401", id_anggota:"ALK01"},
+        {id_sektor:"BA", id_kelas:"AA401", id_anggota:"MNA01"}, {id_sektor:"BA", id_kelas:"AA401", id_anggota:"WUK01"},
+        {id_sektor:"BA", id_kelas:"AA401", id_anggota:"KAN02"}, {id_sektor:"GA", id_kelas:"AA401", id_anggota:"SUL01"},
+        {id_sektor:"GA", id_kelas:"AA401", id_anggota:"IRS01"}, {id_sektor:"GA", id_kelas:"AA401", id_anggota:"MUS03"},
+        {id_sektor:"MA", id_kelas:"AA401", id_anggota:"LNI01"}, {id_sektor:"MA", id_kelas:"AA401", id_anggota:"NRE01"},
+        {id_sektor:"MA", id_kelas:"AA401", id_anggota:"PRA02"}, {id_sektor:"PR", id_kelas:"AA401", id_anggota:"KUA01"},
+        {id_sektor:"PR", id_kelas:"AA401", id_anggota:"AED01"}, {id_sektor:"PR", id_kelas:"AA401", id_anggota:"NUY01"},
+        {id_sektor:"PR", id_kelas:"AA401", id_anggota:"SUS01"}, {id_sektor:"PR", id_kelas:"AA401", id_anggota:"SYD01"},
+        {id_sektor:"PR", id_kelas:"AA401", id_anggota:"IRA01"}, {id_sektor:"PR", id_kelas:"AA401", id_anggota:"DIW01"},
+        {id_sektor:"RG", id_kelas:"AA401", id_anggota:"ZAN01"}, {id_sektor:"RG", id_kelas:"AA401", id_anggota:"SMS01"},
+        {id_sektor:"RG", id_kelas:"AA401", id_anggota:"SNA01"}, {id_sektor:"RG", id_kelas:"AA401", id_anggota:"RBR01"},
+        {id_sektor:"RG", id_kelas:"AA401", id_anggota:"AAT01"}, {id_sektor:"RG", id_kelas:"AA401", id_anggota:"SNA01"},
+        {id_sektor:"SA", id_kelas:"AA401", id_anggota:"LAF01"}, {id_sektor:"SA", id_kelas:"AA401", id_anggota:"RKH01"},
+        {id_sektor:"SA", id_kelas:"AA401", id_anggota:"ODV01"}, {id_sektor:"SA", id_kelas:"AA401", id_anggota:"DSH01"},
+        {id_sektor:"SA", id_kelas:"AA401", id_anggota:"SRE01"}, {id_sektor:"SA", id_kelas:"AA401", id_anggota:"HEM01"},
+        {id_sektor:"SU", id_kelas:"AA401", id_anggota:"HDR01"}, {id_sektor:"SU", id_kelas:"AA401", id_anggota:"AID01"},
+        {id_sektor:"SU", id_kelas:"AA401", id_anggota:"EAD01"}, {id_sektor:"SU", id_kelas:"AA401", id_anggota:"HII01"},
+        {id_sektor:"SU", id_kelas:"AA401", id_anggota:"WTI01"}, {id_sektor:"SU", id_kelas:"AA401", id_anggota:"REH01"},
+        {id_sektor:"SU", id_kelas:"AA401", id_anggota:"AEN01"}, {id_sektor:"PR", id_kelas:"AA402", id_anggota:"RRA01"},
+        {id_sektor:"PR", id_kelas:"AA402", id_anggota:"NYA01"}, {id_sektor:"PR", id_kelas:"AA402", id_anggota:"TUL01"},
+        {id_sektor:"PR", id_kelas:"AA402", id_anggota:"AUM01"}, {id_sektor:"PR", id_kelas:"AA402", id_anggota:"MED01"},
+        {id_sektor:"PR", id_kelas:"AA402", id_anggota:"REE01"}, {id_sektor:"PR", id_kelas:"AA402", id_anggota:"TUL01"},
+        {id_sektor:"SA", id_kelas:"AA402", id_anggota:"LAS01"}, {id_sektor:"SA", id_kelas:"AA402", id_anggota:"SEF01"},
+        {id_sektor:"SA", id_kelas:"AA402", id_anggota:"RIS01"}, {id_sektor:"SA", id_kelas:"AA402", id_anggota:"DVE01"},
+        {id_sektor:"SA", id_kelas:"AA402", id_anggota:"WSE01"}, {id_sektor:"SA", id_kelas:"AA402", id_anggota:"PIC01"},
+        {id_sektor:"SA", id_kelas:"AA403", id_anggota:"HAR01"}, {id_sektor:"SA", id_kelas:"AA403", id_anggota:"DTE01"},
+        {id_sektor:"SA", id_kelas:"AA403", id_anggota:"NUS02"}, {id_sektor:"SA", id_kelas:"AA403", id_anggota:"WUS01"},
+        {id_sektor:"SA", id_kelas:"AA403", id_anggota:"UWU01"}, {id_sektor:"SA", id_kelas:"AA403", id_anggota:"MRA01"},
+        {id_sektor:"PR", id_kelas:"AA501", id_anggota:"DAY01"}, {id_sektor:"PR", id_kelas:"AA501", id_anggota:"SYD01"},
+        {id_sektor:"PR", id_kelas:"AA501", id_anggota:"WMF01"}, {id_sektor:"PR", id_kelas:"AA501", id_anggota:"MUT01"},
+        {id_sektor:"PR", id_kelas:"AA501", id_anggota:"URA01"}, {id_sektor:"PR", id_kelas:"AA501", id_anggota:"HUR01"},
+        {id_sektor:"PR", id_kelas:"AA501", id_anggota:"FEY01"}, {id_sektor:"PR", id_kelas:"AA501", id_anggota:"TUN01"},
+        {id_sektor:"RW", id_kelas:"AA502", id_anggota:"VON01"}, {id_sektor:"RW", id_kelas:"AA502", id_anggota:"HAY01"},
+        {id_sektor:"RW", id_kelas:"AA502", id_anggota:"SHR01"}, {id_sektor:"RW", id_kelas:"AA502", id_anggota:"HAF01"},
+        {id_sektor:"GA", id_kelas:"AA520", id_anggota:"TUT02"}, {id_sektor:"PR", id_kelas:"AX301", id_anggota:"WUN01"},
+        {id_sektor:"PR", id_kelas:"AX301", id_anggota:"WIF01"}, {id_sektor:"PR", id_kelas:"AX301", id_anggota:"DFR01"},
+        {id_sektor:"RW", id_kelas:"AX301", id_anggota:"CUM01"}, {id_sektor:"RW", id_kelas:"AX301", id_anggota:"WUR01"},
+        {id_sektor:"RW", id_kelas:"AX301", id_anggota:"VON03"}, {id_sektor:"RW", id_kelas:"AX301", id_anggota:"AIS01"},
+        {id_sektor:"RW", id_kelas:"AX301", id_anggota:"DUY01"}, {id_sektor:"RW", id_kelas:"AX301", id_anggota:"RAP01"},
+        {id_sektor:"RW", id_kelas:"AX401", id_anggota:"SUR01"}, {id_sektor:"RW", id_kelas:"AX401", id_anggota:"AX401"},
+        {id_sektor:"RW", id_kelas:"AX401", id_anggota:"MIM01"}, {id_sektor:"RW", id_kelas:"AX401", id_anggota:"EDI01"},
+        {id_sektor:"RW", id_kelas:"AX401", id_anggota:"IAN01"}, {id_sektor:"RW", id_kelas:"AX401", id_anggota:"FAA01"},
+        {id_sektor:"RW", id_kelas:"AX401", id_anggota:"EDI01"}, {id_sektor:"RW", id_kelas:"AX401", id_anggota:"FRA01"},
+        {id_sektor:"RW", id_kelas:"AX401", id_anggota:"AIL01"}, {id_sektor:"RW", id_kelas:"AX401", id_anggota:"DNS01"},
+        {id_sektor:"RW", id_kelas:"AX402", id_anggota:"SAN01"}, {id_sektor:"RW", id_kelas:"AX402", id_anggota:"SUY01"},
+        {id_sektor:"RW", id_kelas:"AX402", id_anggota:"RMA01"}, {id_sektor:"RW", id_kelas:"AX402", id_anggota:"BEN10"},
+        {id_sektor:"BA", id_kelas:"IA301", id_anggota:"WUJ01"}, {id_sektor:"BA", id_kelas:"IA301", id_anggota:"GIA01"},
+        {id_sektor:"BA", id_kelas:"IA301", id_anggota:"RIF01"}, {id_sektor:"BA", id_kelas:"IA301", id_anggota:"MAR01"},
+        {id_sektor:"BA", id_kelas:"IA301", id_anggota:"PKR01"}, {id_sektor:"BA", id_kelas:"IA301", id_anggota:"FMA01"},
+        {id_sektor:"BA", id_kelas:"IA301", id_anggota:"KON01"}, {id_sektor:"BA", id_kelas:"IA301", id_anggota:"IOM01"},
+        {id_sektor:"BA", id_kelas:"IA301", id_anggota:"HKA01"}, {id_sektor:"BA", id_kelas:"IA301", id_anggota:"RRB01"},
+        {id_sektor:"BI", id_kelas:"IA301", id_anggota:"NAF01"}, {id_sektor:"GA", id_kelas:"IA301", id_anggota:"PYA01"},
+        {id_sektor:"GA", id_kelas:"IA301", id_anggota:"QKI01"}, {id_sektor:"GA", id_kelas:"IA301", id_anggota:"RNA01"},
+        {id_sektor:"GA", id_kelas:"IA301", id_anggota:"MSI02"}, {id_sektor:"GA", id_kelas:"IA301", id_anggota:"BTA01"},
+        {id_sektor:"GA", id_kelas:"IA301", id_anggota:"MSI01"}, {id_sektor:"MA", id_kelas:"IA301", id_anggota:"ARM01"},
+        {id_sektor:"MA", id_kelas:"IA301", id_anggota:"SBD01"}, {id_sektor:"MA", id_kelas:"IA301", id_anggota:"DBT01"},
+        {id_sektor:"MA", id_kelas:"IA301", id_anggota:"RBA01"}, {id_sektor:"MA", id_kelas:"IA301", id_anggota:"POS01"},
+        {id_sektor:"PR", id_kelas:"IA301", id_anggota:"HAM01"}, {id_sektor:"PR", id_kelas:"IA301", id_anggota:"HAS01"},
+        {id_sektor:"PR", id_kelas:"IA301", id_anggota:"HUS01"}, {id_sektor:"PR", id_kelas:"IA301", id_anggota:"ANT01"},
+        {id_sektor:"PR", id_kelas:"IA301", id_anggota:"RUR01"}, {id_sektor:"PR", id_kelas:"IA301", id_anggota:"YUM01"},
+        {id_sektor:"PR", id_kelas:"IA301", id_anggota:"FAS01"}, {id_sektor:"RG", id_kelas:"IA301", id_anggota:"SMA01"},
+        {id_sektor:"RG", id_kelas:"IA301", id_anggota:"HHD01"}, {id_sektor:"RG", id_kelas:"IA301", id_anggota:"SAD01"},
+        {id_sektor:"RG", id_kelas:"IA301", id_anggota:"HAR01"}, {id_sektor:"RG", id_kelas:"IA301", id_anggota:"FHA01"},
+        {id_sektor:"RG", id_kelas:"IA301", id_anggota:"MAN01"}, {id_sektor:"RW", id_kelas:"IA301", id_anggota:"RAM01"},
+        {id_sektor:"RW", id_kelas:"IA301", id_anggota:"LOS01"}, {id_sektor:"RW", id_kelas:"IA301", id_anggota:"IMA01"},
+        {id_sektor:"SA", id_kelas:"IA301", id_anggota:"WSI01"}, {id_sektor:"SA", id_kelas:"IA301", id_anggota:"HYS01"},
+        {id_sektor:"SA", id_kelas:"IA301", id_anggota:"BAM01"}, {id_sektor:"SA", id_kelas:"IA301", id_anggota:"SUM01"},
+        {id_sektor:"SA", id_kelas:"IA301", id_anggota:"RBI01"}, {id_sektor:"SA", id_kelas:"IA301", id_anggota:"AOR01"},
+        {id_sektor:"SA", id_kelas:"IA301", id_anggota:"SAJ01"}, {id_sektor:"SA", id_kelas:"IA301", id_anggota:"KAH01"},
+        {id_sektor:"SA", id_kelas:"IA301", id_anggota:"LIW01"}, {id_sektor:"SL", id_kelas:"IA301", id_anggota:"NAZ01"},
+        {id_sektor:"SL", id_kelas:"IA301", id_anggota:"TUB01"}, {id_sektor:"SL", id_kelas:"IA301", id_anggota:"RRT01"},
+        {id_sektor:"SL", id_kelas:"IA301", id_anggota:"AID01"}, {id_sektor:"SU", id_kelas:"IA301", id_anggota:"YIR01"},
+        {id_sektor:"SU", id_kelas:"IA301", id_anggota:"DUB02"}, {id_sektor:"SU", id_kelas:"IA301", id_anggota:"HAP01"},
+        {id_sektor:"SU", id_kelas:"IA301", id_anggota:"TUM01"}, {id_sektor:"SU", id_kelas:"IA301", id_anggota:"SEH01"},
+        {id_sektor:"SU", id_kelas:"IA301", id_anggota:"KAW01"}, {id_sektor:"BA", id_kelas:"IA302", id_anggota:"KUM01"},
+        {id_sektor:"BA", id_kelas:"IA302", id_anggota:"HAS01"}, {id_sektor:"BA", id_kelas:"IA302", id_anggota:"SDE01"},
+        {id_sektor:"BA", id_kelas:"IA302", id_anggota:"MAH01"}, {id_sektor:"BA", id_kelas:"IA302", id_anggota:"NAB01"},
+        {id_sektor:"BA", id_kelas:"IA302", id_anggota:"IWD01"}, {id_sektor:"BA", id_kelas:"IA302", id_anggota:"AGB02"},
+        {id_sektor:"BA", id_kelas:"IA302", id_anggota:"RFN01"}, {id_sektor:"BI", id_kelas:"IA302", id_anggota:"SIS01"},
+        {id_sektor:"GA", id_kelas:"IA302", id_anggota:"SUM01"}, {id_sektor:"GA", id_kelas:"IA302", id_anggota:"KUN01"},
+        {id_sektor:"GA", id_kelas:"IA302", id_anggota:"WRA01"}, {id_sektor:"GA", id_kelas:"IA302", id_anggota:"RHM01"},
+        {id_sektor:"GA", id_kelas:"IA302", id_anggota:"HSA01"}, {id_sektor:"GA", id_kelas:"IA302", id_anggota:"IFM01"},
+        {id_sektor:"PR", id_kelas:"IA302", id_anggota:"PTF01"}, {id_sektor:"PR", id_kelas:"IA302", id_anggota:"SAR01"},
+        {id_sektor:"PR", id_kelas:"IA302", id_anggota:"NAB01"}, {id_sektor:"PR", id_kelas:"IA302", id_anggota:"ROM02"},
+        {id_sektor:"PR", id_kelas:"IA302", id_anggota:"SAN01"}, {id_sektor:"RG", id_kelas:"IA302", id_anggota:"DKA01"},
+        {id_sektor:"RW", id_kelas:"IA302", id_anggota:"PAW01"}, {id_sektor:"RW", id_kelas:"IA302", id_anggota:"AAH01"},
+        {id_sektor:"RW", id_kelas:"IA302", id_anggota:"HAW01"}, {id_sektor:"SA", id_kelas:"IA302", id_anggota:"SIR01"},
+        {id_sektor:"SA", id_kelas:"IA302", id_anggota:"FAH01"}, {id_sektor:"SA", id_kelas:"IA302", id_anggota:"MZA01"},
+        {id_sektor:"SA", id_kelas:"IA302", id_anggota:"AUP01"}, {id_sektor:"SA", id_kelas:"IA302", id_anggota:"WGA01"},
+        {id_sektor:"SA", id_kelas:"IA302", id_anggota:"SRI01"}, {id_sektor:"SL", id_kelas:"IA302", id_anggota:"SEJ01"},
+        {id_sektor:"SL", id_kelas:"IA302", id_anggota:"FLA01"}, {id_sektor:"SL", id_kelas:"IA302", id_anggota:"IAW01"},
+        {id_sektor:"SL", id_kelas:"IA302", id_anggota:"SAB01"}, {id_sektor:"SL", id_kelas:"IA302", id_anggota:"BNI01"},
+        {id_sektor:"SL", id_kelas:"IA302", id_anggota:"KOD01"}, {id_sektor:"SL", id_kelas:"IA302", id_anggota:"NDM01"},
+        {id_sektor:"SU", id_kelas:"IA302", id_anggota:"AYS01"}, {id_sektor:"SU", id_kelas:"IA302", id_anggota:"SAB01"},
+        {id_sektor:"SU", id_kelas:"IA302", id_anggota:"AOS01"}, {id_sektor:"SU", id_kelas:"IA302", id_anggota:"DRI01"},
+        {id_sektor:"BA", id_kelas:"IA303", id_anggota:"NDE01"}, {id_sektor:"BA", id_kelas:"IA303", id_anggota:"CIW01"},
+        {id_sektor:"BI", id_kelas:"IA303", id_anggota:"ZZI01"}, {id_sektor:"BI", id_kelas:"IA303", id_anggota:"MAH01"},
+        {id_sektor:"GA", id_kelas:"IA303", id_anggota:"SAB01"}, {id_sektor:"GA", id_kelas:"IA303", id_anggota:"AHK01"},
+        {id_sektor:"GA", id_kelas:"IA303", id_anggota:"NAK01"}, {id_sektor:"GA", id_kelas:"IA303", id_anggota:"JLA01"},
+        {id_sektor:"GA", id_kelas:"IA303", id_anggota:"KEM01"}, {id_sektor:"GA", id_kelas:"IA303", id_anggota:"AIW01"},
+        {id_sektor:"GA", id_kelas:"IA303", id_anggota:"ART01"}, {id_sektor:"GA", id_kelas:"IA303", id_anggota:"AMA01"},
+        {id_sektor:"RG", id_kelas:"IA303", id_anggota:"HOS01"}, {id_sektor:"RG", id_kelas:"IA303", id_anggota:"NAZ01"},
+        {id_sektor:"RG", id_kelas:"IA303", id_anggota:"NAZ01"}, {id_sektor:"RG", id_kelas:"IA303", id_anggota:"SPA01"},
+        {id_sektor:"RG", id_kelas:"IA303", id_anggota:"NAZ01"}, {id_sektor:"RG", id_kelas:"IA303", id_anggota:"NIR01"},
+        {id_sektor:"RW", id_kelas:"IA303", id_anggota:"HID01"}, {id_sektor:"RW", id_kelas:"IA303", id_anggota:"TAB01"},
+        {id_sektor:"RW", id_kelas:"IA303", id_anggota:"FAD01"}, {id_sektor:"RW", id_kelas:"IA303", id_anggota:"FAS01"},
+        {id_sektor:"SA", id_kelas:"IA303", id_anggota:"CRA01"}, {id_sektor:"SA", id_kelas:"IA303", id_anggota:"BAB01"},
+        {id_sektor:"SA", id_kelas:"IA303", id_anggota:"DAF01"}, {id_sektor:"SA", id_kelas:"IA303", id_anggota:"RNA01"},
+        {id_sektor:"SA", id_kelas:"IA303", id_anggota:"KAH02"}, {id_sektor:"SA", id_kelas:"IA303", id_anggota:"BAB01"},
+        {id_sektor:"SU", id_kelas:"IA303", id_anggota:"UPJ01"}, {id_sektor:"SU", id_kelas:"IA303", id_anggota:"WRB01"},
+        {id_sektor:"SU", id_kelas:"IA303", id_anggota:"YEK01"}, {id_sektor:"SU", id_kelas:"IA303", id_anggota:"ROM01"},
+        {id_sektor:"BA", id_kelas:"IA304", id_anggota:"PKE01"}, {id_sektor:"BA", id_kelas:"IA304", id_anggota:"RBA01"},
+        {id_sektor:"BA", id_kelas:"IA304", id_anggota:"IAS01"}, {id_sektor:"BA", id_kelas:"IA304", id_anggota:"KAN01"},
+        {id_sektor:"BA", id_kelas:"IA304", id_anggota:"HNA01"}, {id_sektor:"BA", id_kelas:"IA304", id_anggota:"NAM01"},
+        {id_sektor:"GA", id_kelas:"IA304", id_anggota:"WDA02"}, {id_sektor:"GA", id_kelas:"IA304", id_anggota:"PBT01"},
+        {id_sektor:"GA", id_kelas:"IA304", id_anggota:"MUJ01"}, {id_sektor:"GA", id_kelas:"IA304", id_anggota:"HFD01"},
+        {id_sektor:"GA", id_kelas:"IA304", id_anggota:"SAN01"}, {id_sektor:"GA", id_kelas:"IA304", id_anggota:"AII01"},
+        {id_sektor:"GA", id_kelas:"IA304", id_anggota:"RAD01"}, {id_sektor:"RG", id_kelas:"IA304", id_anggota:"HAF01"},
+        {id_sektor:"RG", id_kelas:"IA304", id_anggota:"DKA02"}, {id_sektor:"RG", id_kelas:"IA304", id_anggota:"SIW01"},
+        {id_sektor:"RG", id_kelas:"IA304", id_anggota:"CNA01"}, {id_sektor:"RG", id_kelas:"IA304", id_anggota:"SSA01"},
+        {id_sektor:"RW", id_kelas:"IA304", id_anggota:"SCA01"}, {id_sektor:"RW", id_kelas:"IA304", id_anggota:"FMU01"},
+        {id_sektor:"RW", id_kelas:"IA304", id_anggota:"WBA01"}, {id_sektor:"SU", id_kelas:"IA304", id_anggota:"HLI01"},
+        {id_sektor:"SU", id_kelas:"IA304", id_anggota:"SAR01"}, {id_sektor:"SU", id_kelas:"IA304", id_anggota:"KNU01"},
+        {id_sektor:"SU", id_kelas:"IA304", id_anggota:"TRE01"}, {id_sektor:"BA", id_kelas:"IA305", id_anggota:"HAW01"},
+        {id_sektor:"BA", id_kelas:"IA305", id_anggota:"IFS01"}, {id_sektor:"BA", id_kelas:"IA305", id_anggota:"DIA01"},
+        {id_sektor:"BA", id_kelas:"IA305", id_anggota:"MSU01"}, {id_sektor:"BA", id_kelas:"IA305", id_anggota:"HUM01"},
+        {id_sektor:"BA", id_kelas:"IA305", id_anggota:"USB01"}, {id_sektor:"GA", id_kelas:"IA305", id_anggota:"SHN01"},
+        {id_sektor:"GA", id_kelas:"IA305", id_anggota:"MIR01"}, {id_sektor:"GA", id_kelas:"IA305", id_anggota:"SEC01"},
+        {id_sektor:"GA", id_kelas:"IA305", id_anggota:"ENU01"}, {id_sektor:"GA", id_kelas:"IA305", id_anggota:"IBA01"},
+        {id_sektor:"RG", id_kelas:"IA305", id_anggota:"HKI01"}, {id_sektor:"RG", id_kelas:"IA305", id_anggota:"IUM01"},
+        {id_sektor:"RG", id_kelas:"IA305", id_anggota:"RAD01"}, {id_sektor:"RG", id_kelas:"IA305", id_anggota:"FHA02"},
+        {id_sektor:"RG", id_kelas:"IA305", id_anggota:"AAA01"}, {id_sektor:"RG", id_kelas:"IA305", id_anggota:"SOR01"},
+        {id_sektor:"RW", id_kelas:"IA305", id_anggota:"JRK01"}, {id_sektor:"RW", id_kelas:"IA305", id_anggota:"AAR01"},
+        {id_sektor:"RW", id_kelas:"IA305", id_anggota:"WNA01"}, {id_sektor:"RW", id_kelas:"IA305", id_anggota:"HEM01"},
+        {id_sektor:"RW", id_kelas:"IA305", id_anggota:"HPA01"}, {id_sektor:"SA", id_kelas:"IA305", id_anggota:"RAS01"},
+        {id_sektor:"GA", id_kelas:"IA306", id_anggota:"DGI01"}, {id_sektor:"GA", id_kelas:"IA306", id_anggota:"SUM02"},
+        {id_sektor:"GA", id_kelas:"IA306", id_anggota:"OEM01"}, {id_sektor:"GA", id_kelas:"IA306", id_anggota:"MUS02"},
+        {id_sektor:"GA", id_kelas:"IA306", id_anggota:"RRA01"}, {id_sektor:"GA", id_kelas:"IA306", id_anggota:"SAM01"},
+        {id_sektor:"GA", id_kelas:"IA307", id_anggota:"AMT01"}, {id_sektor:"GA", id_kelas:"IA307", id_anggota:"HUN01"},
+        {id_sektor:"GA", id_kelas:"IA307", id_anggota:"SDE01"}, {id_sektor:"GA", id_kelas:"IA307", id_anggota:"AZA01"},
+        {id_sektor:"GA", id_kelas:"IA307", id_anggota:"LOS01"}
+    ];
+
+    let dataUsiaMap = {};
+    let selectedSektor = null;
+    let selectedKelas = null;
+
+    // Render Sektor List
+    function renderSektorList() {
+        const sekaSet = new Set(masterData.map(item => item.id_sektor));
+        const sektorList = Array.from(sekaSet).sort();
+
+        const container = document.getElementById('sektor-container');
+        container.innerHTML = '';
+        sektorList.forEach(sektor => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-sektor';
+            btn.innerText = `Sektor ${sektor}`;
+            btn.onclick = () => selectSektor(sektor, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function selectSektor(sektor, btnElement) {
+        selectedSektor = sektor;
+        selectedKelas = null;
+        document.querySelectorAll('.btn-sektor').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        document.getElementById('anggota-container').innerHTML = '';
+        renderKelasList(sektor);
+    }
+
+    // Render Kelas List (Urut Abjad)
+    function renderKelasList(sektor) {
+        const kelSet = new Set(masterData.filter(item => item.id_sektor === sektor).map(item => item.id_kelas));
+        const kelasList = Array.from(kelSet).sort();
+
+        const container = document.getElementById('kelas-container');
+        container.innerHTML = '';
+        kelasList.forEach(kelas => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-kelas';
+            btn.innerText = `Kelas ${kelas}`;
+            btn.onclick = () => selectKelas(kelas, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function selectKelas(kelas, btnElement) {
+        selectedKelas = kelas;
+        document.querySelectorAll('.btn-kelas').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        renderAnggotaInput(selectedSektor, kelas);
+    }
+
+    // Render Form Anggota & Input Usia
+    function renderAnggotaInput(sektor, kelas) {
+        const anggotaList = masterData.filter(item => item.id_sektor === sektor && item.id_kelas === kelas);
+        const container = document.getElementById('anggota-container');
+
+        let html = `<div class="anggota-card">
+            <h4 style="text-align:center;">Anggota Sektor ${sektor} - Kelas ${kelas}</h4>`;
+        
+        anggotaList.forEach(item => {
+            const currentUsia = dataUsiaMap[item.id_anggota] || '';
+            html += `
+                <div class="input-group">
+                    <label>${item.id_anggota}</label>
+                    <input type="number" id="input_usia_${item.id_anggota}" value="${currentUsia}" placeholder="Usia">
+                    <button class="btn-simpan" onclick="simpanUsia('${item.id_sektor}', '${item.id_kelas}', '${item.id_anggota}')">Simpan</button>
+                </div>
+            `;
+        });
+        html += `</div>`;
+        container.innerHTML = html;
+    }
+
+    // Simpan Data Usia ke Apps Script
+    function simpanUsia(sektor, kelas, idAnggota) {
+        const usiaInput = document.getElementById(`input_usia_${idAnggota}`).value;
+        if (!usiaInput) {
+            alert("Usia harus diisi!");
+            return;
+        }
+
+        const payload = {
+            id_sektor: sektor,
+            id_kelas: kelas,
+            id_anggota: idAnggota,
+            usia: parseInt(usiaInput)
+        };
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(() => {
+            alert(`Berhasil menyimpan usia untuk ${idAnggota}`);
+            setTimeout(() => {
+                muatDataSheet();
+            }, 1500);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Gagal menyimpan data.");
+        });
+    }
+
+    // Fetch GVIZ & Render Rekap
+    function muatDataSheet() {
+        fetch(GVIZ_URL)
+            .then(res => res.text())
+            .then(text => {
+                const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+                const jsonData = JSON.parse(jsonString);
+
+                dataUsiaMap = {};
+                if (jsonData.table && jsonData.table.rows) {
+                    jsonData.table.rows.forEach(row => {
+                        const idAnggota = row.c[2] ? row.c[2].v : null;
+                        const usia = row.c[3] ? row.c[3].v : null;
+                        if (idAnggota && usia !== null && usia !== undefined) {
+                            dataUsiaMap[idAnggota] = parseInt(usia);
+                        }
+                    });
+                }
+
+                renderRekap();
+                document.getElementById('loading-status').style.display = 'none';
+                document.getElementById('table-rekap-1').style.display = 'table';
+                document.getElementById('table-rekap-2').style.display = 'table';
+                
+                if (selectedSektor && selectedKelas) {
+                    renderAnggotaInput(selectedSektor, selectedKelas);
+                }
+            })
+            .catch(err => {
+                console.error("Gagal muat GVIZ:", err);
+                renderRekap();
+                document.getElementById('loading-status').style.display = 'none';
+                document.getElementById('table-rekap-1').style.display = 'table';
+                document.getElementById('table-rekap-2').style.display = 'table';
+            });
+    }
+
+    function renderRekap() {
+        const sektorSet = new Set(masterData.map(item => item.id_sektor));
+        const daftarSektor = Array.from(sektorSet).sort();
+
+        const tbody1 = document.getElementById('tbody-rekap-1');
+        const tbody2 = document.getElementById('tbody-rekap-2');
+        tbody1.innerHTML = '';
+        tbody2.innerHTML = '';
+
+        let totalTerisi = 0;
+        let totalSeluruh = masterData.length;
+        let totalKelompokUsia = { u25: 0, u26_30: 0, u31_35: 0, u36_45: 0, u46plus: 0 };
+
+        daftarSektor.forEach(sektor => {
+            const anggotaSektor = masterData.filter(item => item.id_sektor === sektor);
+            const totalAnggota = anggotaSektor.length;
+
+            let terisi = 0;
+            let kelUsia = { u25: 0, u26_30: 0, u31_35: 0, u36_45: 0, u46plus: 0 };
+
+            anggotaSektor.forEach(item => {
+                const usia = dataUsiaMap[item.id_anggota];
+                if (usia !== undefined && usia !== null && !isNaN(usia)) {
+                    terisi++;
+                    if (usia < 25) kelUsia.u25++;
+                    else if (usia <= 30) kelUsia.u26_30++;
+                    else if (usia <= 35) kelUsia.u31_35++;
+                    else if (usia <= 45) kelUsia.u36_45++;
+                    else kelUsia.u46plus++;
+                }
+            });
+
+            totalTerisi += terisi;
+            totalKelompokUsia.u25 += kelUsia.u25;
+            totalKelompokUsia.u26_30 += kelUsia.u26_30;
+            totalKelompokUsia.u31_35 += kelUsia.u31_35;
+            totalKelompokUsia.u36_45 += kelUsia.u36_45;
+            totalKelompokUsia.u46plus += kelUsia.u46plus;
+
+            const prosentase = ((terisi / totalAnggota) * 100).toFixed(1) + '%';
+
+            // Row Rekap 1
+            tbody1.innerHTML += `
+                <tr>
+                    <td><b>${sektor}</b></td>
+                    <td>${terisi}</td>
+                    <td>${totalAnggota}</td>
+                    <td>${prosentase}</td>
+                </tr>
+            `;
+
+            // Row Rekap 2
+            tbody2.innerHTML += `
+                <tr>
+                    <td><b>${sektor}</b></td>
+                    <td>${kelUsia.u25}</td>
+                    <td>${kelUsia.u26_30}</td>
+                    <td>${kelUsia.u31_35}</td>
+                    <td>${kelUsia.u36_45}</td>
+                    <td>${kelUsia.u46plus}</td>
+                </tr>
+            `;
+        });
+
+        // Row Total Rekap 1
+        const totalProsentase = ((totalTerisi / totalSeluruh) * 100).toFixed(1) + '%';
+        tbody1.innerHTML += `
+            <tr style="font-weight: bold; background-color: #f2f2f2;">
+                <td>Total</td>
+                <td>${totalTerisi}</td>
+                <td>${totalSeluruh}</td>
+                <td>${totalProsentase}</td>
+            </tr>
+        `;
+
+        // Row Total Rekap 2
+        tbody2.innerHTML += `
+            <tr style="font-weight: bold; background-color: #f2f2f2;">
+                <td>Total</td>
+                <td>${totalKelompokUsia.u25}</td>
+                <td>${totalKelompokUsia.u26_30}</td>
+                <td>${totalKelompokUsia.u31_35}</td>
+                <td>${totalKelompokUsia.u36_45}</td>
+                <td>${totalKelompokUsia.u46plus}</td>
+            </tr>
+        `;
+    }
+
+    window.onload = function() {
+        renderSektorList();
+        muatDataSheet();
+    };
+</script>
+
+</body>
+</html>
