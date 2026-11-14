@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data PAA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+        .rekap-section {
+            margin-top: 20px;
+        }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 25px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            min-width: 500px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+        .sektor-list, .kelas-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .kelas-list {
+            background-color: #f1f3f5;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .kelas-list:empty {
+            display: none;
+        }
+        .btn-sektor, .btn-kelas {
+            padding: 8px 16px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-sektor.active, .btn-kelas.active {
+            background-color: #007BFF;
+        }
+        .card {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 6px;
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+        }
+        .card-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #007BFF;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        input[type="text"], input[type="date"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .btn-action {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .btn-action:hover { background-color: #218838; }
+        .btn-secondary-action {
+            background-color: #17a2b8;
+            margin-top: 10px;
+        }
+        .btn-secondary-action:hover { background-color: #138496; }
+        .sub-card {
+            background: #f1f8ff;
+            border: 1px solid #c8e1ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Data PAA</h2>
+    <p style="text-align: center; font-size: 13px; color: #555;">Pilih Sektor, lalu pilih Kelas untuk mulai menginput data anggota dan anak.</p>
+    
+    <!-- Step 1: List Sektor -->
+    <div class="sektor-list" id="sektor-container"></div>
+
+    <!-- Step 2: List Kelas -->
+    <div class="kelas-list" id="kelas-container"></div>
+    
+    <!-- Step 3: Form Input Interaktif Anggota & Anak -->
+    <div id="kelas-form-container"></div>
+
+    <hr style="margin: 30px 0;">
+
+    <!-- Bagian Rekapitulasi Data -->
+    <div class="rekap-section">
+        <h3>Rekapitulasi Pengisian Per Sektor</h3>
+        <div id="loading-status" class="loading">Memuat data rekap...</div>
+
+        <div class="table-responsive">
+            <table id="table-rekap-gabungan" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Sektor</th>
+                        <th>Total Kelas</th>
+                        <th>Total Anggota yang Telah Mengisi</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-rekap-gabungan"></tbody>
+            </table>
+        </div>
+
+        <h3>Rekap ID Anggota yang Sudah Mengisi Form</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Sektor</th>
+                        <th>Kelas</th>
+                        <th>ID Anggota</th>
+                        <th>Jumlah Anak</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-rekap-anggota">
+                    <tr><td colspan="5" style="color: #777; font-style: italic;">Belum ada data anggota yang disimpan.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyLjqhMOlAprlZk02UEOBFdj2jHefcyE-u-nGj-f9OICa4Ozis60IOfA1OI06cfZILcTg/exec"; 
+
+    let masterData = [
+        {id_sektor: "BA", id_kelas: "AA301"},
+        {id_sektor: "BA", id_kelas: "AA302"},
+        {id_sektor: "BA", id_kelas: "AA303"},
+        {id_sektor: "BA", id_kelas: "AA304"},
+        {id_sektor: "BA", id_kelas: "AA305"},
+        {id_sektor: "BA", id_kelas: "AA401"},
+        {id_sektor: "BA", id_kelas: "IA301"},
+        {id_sektor: "BA", id_kelas: "IA302"},
+        {id_sektor: "BA", id_kelas: "IA303"},
+        {id_sektor: "BA", id_kelas: "IA304"},
+        {id_sektor: "BA", id_kelas: "IA305"},
+        {id_sektor: "BA", id_kelas: "IA401"},
+        {id_sektor: "BA", id_kelas: "IA402"},
+        {id_sektor: "BA", id_kelas: "IA403"},
+        {id_sektor: "BA", id_kelas: "IA404"},
+        {id_sektor: "BA", id_kelas: "IA501"},
+        {id_sektor: "BA", id_kelas: "IA503"},
+        {id_sektor: "BI", id_kelas: "IA301"},
+        {id_sektor: "BI", id_kelas: "IA302"},
+        {id_sektor: "BI", id_kelas: "IA303"},
+        {id_sektor: "BI", id_kelas: "IA401"},
+        {id_sektor: "BI", id_kelas: "IA402"},
+        {id_sektor: "GA", id_kelas: "AA301"},
+        {id_sektor: "GA", id_kelas: "AA302"},
+        {id_sektor: "GA", id_kelas: "AA401"},
+        {id_sektor: "GA", id_kelas: "IA301"},
+        {id_sektor: "GA", id_kelas: "IA302"},
+        {id_sektor: "GA", id_kelas: "IA303"},
+        {id_sektor: "GA", id_kelas: "IA304"},
+        {id_sektor: "GA", id_kelas: "IA305"},
+        {id_sektor: "GA", id_kelas: "IA306"},
+        {id_sektor: "GA", id_kelas: "IA307"},
+        {id_sektor: "GA", id_kelas: "IA401"},
+        {id_sektor: "GA", id_kelas: "IA402"},
+        {id_sektor: "GA", id_kelas: "IA403"},
+        {id_sektor: "GA", id_kelas: "IA404"},
+        {id_sektor: "GA", id_kelas: "IA405"},
+        {id_sektor: "GA", id_kelas: "IA420"},
+        {id_sektor: "GA", id_kelas: "IA507"},
+        {id_sektor: "MA", id_kelas: "AA301"},
+        {id_sektor: "MA", id_kelas: "AA302"},
+        {id_sektor: "MA", id_kelas: "AA401"},
+        {id_sektor: "MA", id_kelas: "IA301"},
+        {id_sektor: "PR", id_kelas: "AA301"},
+        {id_sektor: "PR", id_kelas: "AA302"},
+        {id_sektor: "PR", id_kelas: "AA303"},
+        {id_sektor: "PR", id_kelas: "AA401"},
+        {id_sektor: "PR", id_kelas: "AA402"},
+        {id_sektor: "PR", id_kelas: "AA501"},
+        {id_sektor: "PR", id_kelas: "AX301"},
+        {id_sektor: "PR", id_kelas: "IA301"},
+        {id_sektor: "PR", id_kelas: "IA302"},
+        {id_sektor: "PR", id_kelas: "IA401"},
+        {id_sektor: "PR", id_kelas: "IA506"},
+        {id_sektor: "RG", id_kelas: "AA301"},
+        {id_sektor: "RG", id_kelas: "AA302"},
+        {id_sektor: "RG", id_kelas: "AA401"},
+        {id_sektor: "RG", id_kelas: "IA301"},
+        {id_sektor: "RG", id_kelas: "IA302"},
+        {id_sektor: "RG", id_kelas: "IA303"},
+        {id_sektor: "RG", id_kelas: "IA304"},
+        {id_sektor: "RG", id_kelas: "IA305"},
+        {id_sektor: "RG", id_kelas: "IA401"},
+        {id_sektor: "RW", id_kelas: "AA301"},
+        {id_sektor: "RW", id_kelas: "AA502"},
+        {id_sektor: "RW", id_kelas: "AX301"},
+        {id_sektor: "RW", id_kelas: "AX401"},
+        {id_sektor: "RW", id_kelas: "AX402"},
+        {id_sektor: "RW", id_kelas: "IA301"},
+        {id_sektor: "RW", id_kelas: "IA302"},
+        {id_sektor: "RW", id_kelas: "IA303"},
+        {id_sektor: "RW", id_kelas: "IA304"},
+        {id_sektor: "RW", id_kelas: "IA305"},
+        {id_sektor: "RW", id_kelas: "IA401"},
+        {id_sektor: "RW", id_kelas: "IA402"},
+        {id_sektor: "RW", id_kelas: "IA504"},
+        {id_sektor: "SA", id_kelas: "AA301"},
+        {id_sektor: "SA", id_kelas: "AA302"},
+        {id_sektor: "SA", id_kelas: "AA303"},
+        {id_sektor: "SA", id_kelas: "AA304"},
+        {id_sektor: "SA", id_kelas: "AA305"},
+        {id_sektor: "SA", id_kelas: "AA306"},
+        {id_sektor: "SA", id_kelas: "AA307"},
+        {id_sektor: "SA", id_kelas: "AA308"},
+        {id_sektor: "SA", id_kelas: "AA401"},
+        {id_sektor: "SA", id_kelas: "AA402"},
+        {id_sektor: "SA", id_kelas: "AA403"},
+        {id_sektor: "SA", id_kelas: "IA301"},
+        {id_sektor: "SA", id_kelas: "IA302"},
+        {id_sektor: "SA", id_kelas: "IA303"},
+        {id_sektor: "SA", id_kelas: "IA305"},
+        {id_sektor: "SA", id_kelas: "IA401"},
+        {id_sektor: "SA", id_kelas: "IA402"},
+        {id_sektor: "SA", id_kelas: "IA505"},
+        {id_sektor: "SL", id_kelas: "AA301"},
+        {id_sektor: "SL", id_kelas: "AA303"},
+        {id_sektor: "SL", id_kelas: "IA301"},
+        {id_sektor: "SL", id_kelas: "IA302"},
+        {id_sektor: "SL", id_kelas: "IA401"},
+        {id_sektor: "SL", id_kelas: "IA402"},
+        {id_sektor: "SL", id_kelas: "IA502"},
+        {id_sektor: "SU", id_kelas: "AA301"},
+        {id_sektor: "SU", id_kelas: "AA401"},
+        {id_sektor: "SU", id_kelas: "IA301"},
+        {id_sektor: "SU", id_kelas: "IA302"},
+        {id_sektor: "SU", id_kelas: "IA303"},
+        {id_sektor: "SU", id_kelas: "IA304"},
+        {id_sektor: "SU", id_kelas: "IA401"},
+        {id_sektor: "SU", id_kelas: "IA402"},
+        {id_sektor: "SU", id_kelas: "IA508"}
+    ];
+	
+    masterData.forEach(item => {
+        if (item.id_kelas && item.id_kelas.length >= 3 && item.id_kelas.charAt(2) === '5') {
+            item.id_sektor = "L5";
+        }
+    });
+
+    const seenSet = new Set();
+    masterData = masterData.filter(item => {
+        const uniqueKey = `${item.id_sektor}_${item.id_kelas}`;
+        if (seenSet.has(uniqueKey)) return false;
+        seenSet.add(uniqueKey);
+        return true;
+    });
+
+    let submittedAnggotaData = {};
+    let selectedSektor = null;
+    let selectedKelas = null;
+
+    function getUniqueKey(sektor, kelas) {
+        return `${sektor}_${kelas}`;
+    }
+
+    function renderSektorList() {
+        const sekaSet = new Set(masterData.map(item => item.id_sektor));
+        let sektorList = Array.from(sekaSet).sort();
+        if (sektorList.includes("L5")) {
+            sektorList = sektorList.filter(s => s !== "L5");
+            sektorList.unshift("L5");
+        }
+
+        const container = document.getElementById('sektor-container');
+        container.innerHTML = '';
+        sektorList.forEach(sektor => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-sektor';
+            btn.innerText = (sektor === "L5") ? "L5" : `Sektor ${sektor}`;
+            btn.onclick = () => selectSektor(sektor, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function selectSektor(sektor, btnElement) {
+        selectedSektor = sektor;
+        selectedKelas = null;
+        document.querySelectorAll('.btn-sektor').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        document.getElementById('kelas-form-container').innerHTML = '';
+        renderKelasList(sektor);
+    }
+
+    function renderKelasList(sektor) {
+        const kelSet = new Set(masterData.filter(item => item.id_sektor === sektor).map(item => item.id_kelas));
+        const kelasList = Array.from(kelSet).sort();
+
+        const container = document.getElementById('kelas-container');
+        container.innerHTML = '';
+        kelasList.forEach(kelas => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-kelas';
+            btn.innerText = `Kelas ${kelas}`;
+            btn.onclick = () => selectKelas(kelas, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function selectKelas(kelas, btnElement) {
+        selectedKelas = kelas;
+        document.querySelectorAll('.btn-kelas').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+
+        renderFormAnggota(selectedSektor, kelas);
+    }
+
+    let temporaryAnakList = [];
+    let currentAnakIndex = 1;
+
+    function renderFormAnggota(sektor, kelas) {
+        temporaryAnakList = [];
+        currentAnakIndex = 1;
+
+        const container = document.getElementById('kelas-form-container');
+        container.innerHTML = `
+            <div class="card">
+                <div class="card-title">Form Input Anggota - Sektor ${sektor} Kelas ${kelas}</div>
+                
+                <div id="form-anggota-body">
+                    <div class="form-group">
+                        <label>ID Anggota:</label>
+                        <input type="text" id="input_id_anggota" placeholder="Masukkan ID Anggota" oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    
+                    <div class="sub-card">
+                        <label id="label-anak-title" style="font-weight: bold; color: #007BFF; margin-bottom: 10px; display: block;">Data Anak ke-1:</label>
+                        
+                        <div class="form-group">
+                            <label>ID / inisial Anak:</label>
+                            <input type="text" id="input_nama_anak" placeholder="ID / inisial Anak">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tempat Lahir Anak (misal: Jakarta):</label>
+                            <input type="text" id="input_tempat_lahir" placeholder="Contoh: Jakarta">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tanggal Lahir Anak:</label>
+                            <input type="date" id="input_tanggal_lahir">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Pendidikan Anak:</label>
+                            <select id="sel_pendidikan">
+                                <option value="">--Pilih Pendidikan--</option>
+                                <option>Pra SD</option><option>SD</option><option>SMP</option><option>SMA</option><option>Kuliah</option><option>Pasca</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Terbina? (Anak):</label>
+                            <select id="sel_terbina">
+                                <option value="">--Pilih Status--</option>
+                                <option>Sudah</option><option>Belum</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Kelas (Anak):</label>
+                            <select id="sel_kelas">
+                                <option value="">--Pilih Kelas--</option>
+                                <option>-</option><option>L0</option><option>L1</option><option>L2</option><option>L3</option><option>L4</option><option>L5</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Pelaksana Pembinaan (Anak):</label>
+                            <select id="sel_pelaksana">
+                                <option value="">--Pilih Pelaksana--</option>
+                                <option>SIT</option><option>Ponpes</option><option>Kampus</option><option>PAA Proda</option><option>Ortu</option><option>Lainnya</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Kondisi (Anak):</label>
+                            <select id="sel_kondisi">
+                                <option value="">--Pilih Kondisi--</option>
+                                <option>Rutin</option><option>Jarang</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Pertanyaan Ada anak lainnya di bawah kondisi anak -->
+                    <div id="tambah-anak-prompt" style="margin-top: 15px; display: none;">
+                        <div style="background: #fff3cd; padding: 12px; border-radius: 5px; text-align: center; border: 1px solid #ffeeba;">
+                            <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">Ada anak lainnya?</p>
+                            <button type="button" onclick="prosesJawabanAnak(true)" style="padding: 6px 20px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 10px; font-weight: bold;">Ya</button>
+                            <button type="button" onclick="prosesJawabanAnak(false)" style="padding: 6px 20px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold;">Tidak</button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-action btn-secondary-action" id="btn-lanjut-anak" onclick="cekDanMunculkanPertanyaanAnak()">Simpan / Tambah Anak</button>
+                </div>
+
+                <!-- Bagian Preview Rekap Sebelum Tombol SIMPAN Utama -->
+                <div id="preview-rekap-anggota" style="display:none;">
+                    <h4 style="color: #007BFF; text-align: center;">Rekap Data Anggota & Anak</h4>
+                    <div id="detail-rekap-preview" style="font-size: 13px; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px;"></div>
+                    <button class="btn-action" onclick="kirimKeGoogleSheet('${sektor}', '${kelas}')">SIMPAN</button>
+                </div>
+
+                <div id="after-save-anggota" style="display:none; text-align:center;">
+                    <p style="color: green; font-weight: bold;">Data berhasil disimpan ke sistem!</p>
+                    <button class="btn-action btn-secondary-action" onclick="resetFormAnggotaBaru()">Tambah Anggota Lain</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function cekDanMunculkanPertanyaanAnak() {
+        const idAnggota = document.getElementById('input_id_anggota').value.trim();
+        const namaAnak = document.getElementById('input_nama_anak').value.trim();
+        
+        if(!idAnggota) {
+            alert("ID Anggota wajib diisi terlebih dahulu!");
+            return;
+        }
+        if(!namaAnak) {
+            alert(`Mohon isi nama/keterangan untuk Anak ke-${currentAnakIndex} terlebih dahulu!`);
+            return;
+        }
+
+        document.getElementById('btn-lanjut-anak').style.display = 'none';
+        document.getElementById('tambah-anak-prompt').style.display = 'block';
+    }
+
+    function ambilDataAnakAktif() {
+        return {
+            nama: document.getElementById('input_nama_anak').value.trim(),
+            tempat_lahir: document.getElementById('input_tempat_lahir').value.trim(),
+            tanggal_lahir: document.getElementById('input_tanggal_lahir').value,
+            pendidikan: document.getElementById('sel_pendidikan').value,
+            terbina: document.getElementById('sel_terbina').value,
+            kelas: document.getElementById('sel_kelas').value,
+            pelaksana: document.getElementById('sel_pelaksana').value,
+            kondisi: document.getElementById('sel_kondisi').value
+        };
+    }
+
+    function prosesJawabanAnak(adaLagi) {
+        const anakObj = ambilDataAnakAktif();
+        temporaryAnakList.push(anakObj);
+
+        if (adaLagi) {
+            if (currentAnakIndex >= 10) {
+                alert("Maksimal pengisian adalah 10 anak.");
+                selesaiSemuaAnak();
+                return;
+            }
+            currentAnakIndex++;
+            document.getElementById('label-anak-title').innerText = `Data Anak ke-${currentAnakIndex}:`;
+            
+            document.getElementById('input_nama_anak').value = '';
+            document.getElementById('input_tempat_lahir').value = '';
+            document.getElementById('input_tanggal_lahir').value = '';
+            document.getElementById('sel_pendidikan').value = '';
+            document.getElementById('sel_terbina').value = '';
+            document.getElementById('sel_kelas').value = '';
+            document.getElementById('sel_pelaksana').value = '';
+            document.getElementById('sel_kondisi').value = '';
+
+            document.getElementById('tambah-anak-prompt').style.display = 'none';
+            document.getElementById('btn-lanjut-anak').style.display = 'block';
+        } else {
+            selesaiSemuaAnak();
+        }
+    }
+
+    function selesaiSemuaAnak() {
+        document.getElementById('tambah-anak-prompt').style.display = 'none';
+        document.getElementById('btn-lanjut-anak').style.display = 'none';
+
+        const idAnggota = document.getElementById('input_id_anggota').value.trim();
+
+        document.getElementById('form-anggota-body').style.display = 'none';
+        
+        let htmlPreview = `
+            <b>ID Anggota:</b> ${idAnggota}<br>
+            <b>Total Anak Terdata:</b> ${temporaryAnakList.length} anak<br><hr style="margin: 5px 0;">
+        `;
+        temporaryAnakList.forEach((ank, idx) => {
+            htmlPreview += `
+                <b>Anak ke-${idx+1}:</b> ${ank.nama} (${ank.tempat_lahir}, ${ank.tanggal_lahir})<br>
+                &nbsp;&nbsp;&bull; Pendidikan: ${ank.pendidikan || '-'}<br>
+                &nbsp;&nbsp;&bull; Terbina: ${ank.terbina || '-'}<br>
+                &nbsp;&nbsp;&bull; Kelas: ${ank.kelas || '-'}<br>
+                &nbsp;&nbsp;&bull; Pelaksana: ${ank.pelaksana || '-'}<br>
+                &nbsp;&nbsp;&bull; Kondisi: ${ank.kondisi || '-'}<br>
+            `;
+        });
+
+        document.getElementById('detail-rekap-preview').innerHTML = htmlPreview;
+        document.getElementById('preview-rekap-anggota').style.display = 'block';
+    }
+
+    function kirimKeGoogleSheet(sektor, kelas) {
+        const idAnggota = document.getElementById('input_id_anggota').value.trim();
+        
+        let payloadData = {
+            id_sektor: sektor,
+            id_kelas: kelas,
+            id_anggota: idAnggota,
+            jumlah_anak: temporaryAnakList.length,
+            anak_list: temporaryAnakList
+        };
+
+        const uniqueKey = getUniqueKey(sektor, kelas);
+        if(!submittedAnggotaData[uniqueKey]) {
+            submittedAnggotaData[uniqueKey] = [];
+        }
+        submittedAnggotaData[uniqueKey].push(payloadData);
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadData)
+        }).catch(err => console.error("Gagal kirim ke gs:", err));
+
+        document.getElementById('preview-rekap-anggota').style.display = 'none';
+        document.getElementById('after-save-anggota').style.display = 'block';
+
+        renderRekap();
+    }
+
+    function resetFormAnggotaBaru() {
+        renderFormAnggota(selectedSektor, selectedKelas);
+    }
+
+    function renderRekap() {
+        const sektorSet = new Set(masterData.map(item => item.id_sektor));
+        let daftarSektor = Array.from(sektorSet).sort();
+        if (daftarSektor.includes("L5")) {
+            daftarSektor = daftarSektor.filter(s => s !== "L5");
+            daftarSektor.unshift("L5");
+        }
+
+        const tbodyGabungan = document.getElementById('tbody-rekap-gabungan');
+        const tbodyAnggota = document.getElementById('tbody-rekap-anggota');
+        tbodyGabungan.innerHTML = '';
+        tbodyAnggota.innerHTML = '';
+
+        let grandTotalKelas = 0;
+        let totalAnggotaRows = 0;
+        let totalGlobalAnggotaMengisi = 0;
+
+        daftarSektor.forEach(sektor => {
+            const kelasSektor = masterData.filter(item => item.id_sektor === sektor);
+            const uniqueKelasSet = new Set(kelasSektor.map(k => k.id_kelas));
+            const totalKelas = uniqueKelasSet.size;
+
+            let totalAnggotaSektorIni = 0;
+
+            uniqueKelasSet.forEach(kelas => {
+                const uKey = getUniqueKey(sektor, kelas);
+                if (submittedAnggotaData[uKey] && submittedAnggotaData[uKey].length > 0) {
+                    submittedAnggotaData[uKey].forEach(ang => {
+                        totalAnggotaRows++;
+                        totalAnggotaSektorIni++;
+                        totalGlobalAnggotaMengisi++;
+                        tbodyAnggota.innerHTML += `
+                            <tr>
+                                <td>${totalAnggotaRows}</td>
+                                <td><b>${sektor === "L5" ? "L5" : "Sektor " + sektor}</b></td>
+                                <td>${kelas}</td>
+                                <td>${ang.id_anggota}</td>
+                                <td>${ang.jumlah_anak} Anak</td>
+                            </tr>
+                        `;
+                    });
+                }
+            });
+
+            grandTotalKelas += totalKelas;
+
+            tbodyGabungan.innerHTML += `
+                <tr>
+                    <td><b>${sektor === "L5" ? "L5" : "Sektor " + sektor}</b></td>
+                    <td>${totalKelas}</td>
+                    <td>${totalAnggotaSektorIni} anggota</td>
+                </tr>
+            `;
+        });
+
+        if (totalAnggotaRows === 0) {
+            tbodyAnggota.innerHTML = `<tr><td colspan="5" style="color: #777; font-style: italic;">Belum ada data anggota yang disimpan.</td></tr>`;
+        }
+
+        document.getElementById('loading-status').style.display = 'none';
+        document.getElementById('table-rekap-gabungan').style.display = 'table';
+    }
+
+    window.onload = function() {
+        renderSektorList();
+        renderRekap();
+    };
+</script>
+
+</body>
+</html>
