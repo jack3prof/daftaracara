@@ -161,7 +161,7 @@
     <!-- Bagian Rekapitulasi Data -->
     <div class="rekap-section">
         <h3>Rekapitulasi Pengisian Per Sektor</h3>
-        <div id="loading-status" class="loading">Memuat data rekap...</div>
+        <div id="loading-status" class="loading">Memuat data rekap dari Google Sheet...</div>
 
         <div class="table-responsive">
             <table id="table-rekap-gabungan" style="display: none;">
@@ -176,7 +176,13 @@
             </table>
         </div>
 
-        <h3>Rekap ID Anggota yang Sudah Mengisi Form</h3>
+        <h3 id="target-rekap-anggota">Rekap ID Anggota yang Sudah Mengisi Form</h3>
+        
+        <!-- Input Pencarian Rekap Anggota -->
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="input-pencarian-anggota" placeholder="Cari berdasarkan Sektor, Kelas, atau ID Anggota..." oninput="filterRekapAnggota()">
+        </div>
+
         <div class="table-responsive">
             <table>
                 <thead>
@@ -189,7 +195,7 @@
                     </tr>
                 </thead>
                 <tbody id="tbody-rekap-anggota">
-                    <tr><td colspan="5" style="color: #777; font-style: italic;">Belum ada data anggota yang disimpan.</td></tr>
+                    <tr><td colspan="5" style="color: #777; font-style: italic;">Memuat data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -198,6 +204,10 @@
 
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyLjqhMOlAprlZk02UEOBFdj2jHefcyE-u-nGj-f9OICa4Ozis60IOfA1OI06cfZILcTg/exec"; 
+    
+    // Masukkan Spreadsheet ID Anda di bawah ini (diambil dari URL Google Sheet Anda)
+    const SPREADSHEET_ID = "1Zi4anrDtl_CGDWubR7ayCgg2uliPjs3tFm563uifxOc"; 
+    const SHEET_NAME = "data";
 
     let masterData = [
         {id_sektor: "BA", id_kelas: "AA301"},
@@ -329,10 +339,8 @@
     let submittedAnggotaData = {};
     let selectedSektor = null;
     let selectedKelas = null;
-
-    function getUniqueKey(sektor, kelas) {
-        return `${sektor}_${kelas}`;
-    }
+    let globalListSemuaAnggota = [];
+    let detailedDatabaseRecord = {}; // Menyimpan detail lengkap record per kelas & id_anggota
 
     function renderSektorList() {
         const sekaSet = new Set(masterData.map(item => item.id_sektor));
@@ -401,7 +409,7 @@
                 <div id="form-anggota-body">
                     <div class="form-group">
                         <label>ID Anggota:</label>
-                        <input type="text" id="input_id_anggota" placeholder="Masukkan ID Anggota" oninput="this.value = this.value.toUpperCase()">
+                        <input type="text" id="input_id_anggota" placeholder="Masukkan ID Anggota" oninput="handleIdAnggotaInput(this.value, '${sektor}', '${kelas}')">
                     </div>
                     
                     <div class="sub-card">
@@ -463,21 +471,19 @@
                         </div>
                     </div>
 
-                    <!-- Pertanyaan Ada anak lainnya di bawah kondisi anak -->
                     <div id="tambah-anak-prompt" style="margin-top: 15px; display: none;">
                         <div style="background: #fff3cd; padding: 12px; border-radius: 5px; text-align: center; border: 1px solid #ffeeba;">
                             <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">Ada anak lainnya?</p>
                             <button type="button" onclick="prosesJawabanAnak(true)" style="padding: 6px 20px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 10px; font-weight: bold;">Ya</button>
-                            <button type="button" onclick="prosesJawabanAnak(false)" style="padding: 6px 20px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold;">Tidak</button>
+                            <button type="button" onclick="prosesJawabanAnak(false)" style="padding: 6px 20px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold;">Tidak, langsung Simpan</button>
                         </div>
                     </div>
 
                     <button type="button" class="btn-action btn-secondary-action" id="btn-lanjut-anak" onclick="cekDanMunculkanPertanyaanAnak()">Simpan / Tambah Anak</button>
                 </div>
 
-                <!-- Bagian Preview Rekap Sebelum Tombol SIMPAN Utama -->
                 <div id="preview-rekap-anggota" style="display:none;">
-                    <h4 style="color: #007BFF; text-align: center;">Rekap Data Anggota & Anak</h4>
+                    <h4 id="target-preview-rekap" style="color: #007BFF; text-align: center;">Rekap Data Anggota & Anak</h4>
                     <div id="detail-rekap-preview" style="font-size: 13px; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px;"></div>
                     <button class="btn-action" onclick="kirimKeGoogleSheet('${sektor}', '${kelas}')">SIMPAN</button>
                 </div>
@@ -488,6 +494,34 @@
                 </div>
             </div>
         `;
+    }
+
+    function handleIdAnggotaInput(val, sektor, kelas) {
+        // Otomatis uppercase
+        const upperVal = val.toUpperCase();
+        document.getElementById('input_id_anggota').value = upperVal;
+
+        const uKey = `${sektor}_${kelas}_${upperVal.trim()}`;
+        if (detailedDatabaseRecord[uKey]) {
+            // Jika record sudah ada, muat data anak pertama ke form utama
+            const record = detailedDatabaseRecord[uKey];
+            temporaryAnakList = [...record.anak_list];
+            
+            if (temporaryAnakList.length > 0) {
+                const firstAnak = temporaryAnakList[0];
+                document.getElementById('input_nama_anak').value = firstAnak.nama || '';
+                document.getElementById('input_tempat_lahir').value = firstAnak.tempat_lahir || '';
+                document.getElementById('input_tanggal_lahir').value = firstAnak.tanggal_lahir || '';
+                document.getElementById('sel_pendidikan').value = firstAnak.pendidikan || '';
+                document.getElementById('sel_terbina').value = firstAnak.terbina || '';
+                document.getElementById('sel_kelas').value = firstAnak.kelas || '';
+                document.getElementById('sel_pelaksana').value = firstAnak.pelaksana || '';
+                document.getElementById('sel_kondisi').value = firstAnak.kondisi || '';
+                
+                // Jika anak lebih dari 1, masukkan sisanya ke temporary list setelah anak pertama diedit/lanjut
+                // Untuk kesederhanaan, temporaryAnakList akan di-reset dan diisi ulang saat tombol simpan/tambah
+            }
+        }
     }
 
     function cekDanMunculkanPertanyaanAnak() {
@@ -522,7 +556,13 @@
 
     function prosesJawabanAnak(adaLagi) {
         const anakObj = ambilDataAnakAktif();
-        temporaryAnakList.push(anakObj);
+        
+        // Ganti data index aktif jika sudah ada di temporaryAnakList, atau push baru
+        if (temporaryAnakList[currentAnakIndex - 1]) {
+            temporaryAnakList[currentAnakIndex - 1] = anakObj;
+        } else {
+            temporaryAnakList.push(anakObj);
+        }
 
         if (adaLagi) {
             if (currentAnakIndex >= 10) {
@@ -533,19 +573,29 @@
             currentAnakIndex++;
             document.getElementById('label-anak-title').innerText = `Data Anak ke-${currentAnakIndex}:`;
             
-            document.getElementById('input_nama_anak').value = '';
-            document.getElementById('input_tempat_lahir').value = '';
-            document.getElementById('input_tanggal_lahir').value = '';
-            document.getElementById('sel_pendidikan').value = '';
-            document.getElementById('sel_terbina').value = '';
-            document.getElementById('sel_kelas').value = '';
-            document.getElementById('sel_pelaksana').value = '';
-            document.getElementById('sel_kondisi').value = '';
+            // Cek apakah data anak berikutnya sudah ada di record sebelumnya
+            const nextAnak = temporaryAnakList[currentAnakIndex - 1] || {};
+            document.getElementById('input_nama_anak').value = nextAnak.nama || '';
+            document.getElementById('input_tempat_lahir').value = nextAnak.tempat_lahir || '';
+            document.getElementById('input_tanggal_lahir').value = nextAnak.tanggal_lahir || '';
+            document.getElementById('sel_pendidikan').value = nextAnak.pendidikan || '';
+            document.getElementById('sel_terbina').value = nextAnak.terbina || '';
+            document.getElementById('sel_kelas').value = nextAnak.kelas || '';
+            document.getElementById('sel_pelaksana').value = nextAnak.pelaksana || '';
+            document.getElementById('sel_kondisi').value = nextAnak.kondisi || '';
 
             document.getElementById('tambah-anak-prompt').style.display = 'none';
             document.getElementById('btn-lanjut-anak').style.display = 'block';
         } else {
             selesaiSemuaAnak();
+
+            // SAAT KLIK "TIDAK": Scroll ke Rekap Data Anggota & Anak
+            setTimeout(() => {
+                const targetPreview = document.getElementById('target-preview-rekap');
+                if (targetPreview) {
+                    targetPreview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
         }
     }
 
@@ -554,7 +604,6 @@
         document.getElementById('btn-lanjut-anak').style.display = 'none';
 
         const idAnggota = document.getElementById('input_id_anggota').value.trim();
-
         document.getElementById('form-anggota-body').style.display = 'none';
         
         let htmlPreview = `
@@ -587,30 +636,141 @@
             anak_list: temporaryAnakList
         };
 
-        const uniqueKey = getUniqueKey(sektor, kelas);
-        if(!submittedAnggotaData[uniqueKey]) {
-            submittedAnggotaData[uniqueKey] = [];
-        }
-        submittedAnggotaData[uniqueKey].push(payloadData);
-
         fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payloadData)
+        }).then(() => {
+            document.getElementById('preview-rekap-anggota').style.display = 'none';
+            document.getElementById('after-save-anggota').style.display = 'block';
+            
+            // SAAT KLIK SIMPAN: Scroll ke Rekap ID Anggota yang Sudah Mengisi Form
+            const targetRekapAnggota = document.getElementById('target-rekap-anggota');
+            if (targetRekapAnggota) {
+                targetRekapAnggota.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // Refresh ulang data rekap dari Google Sheet setelah beberapa detik
+            setTimeout(loadDataFromGoogleSheet, 2000);
         }).catch(err => console.error("Gagal kirim ke gs:", err));
-
-        document.getElementById('preview-rekap-anggota').style.display = 'none';
-        document.getElementById('after-save-anggota').style.display = 'block';
-
-        renderRekap();
     }
 
     function resetFormAnggotaBaru() {
         renderFormAnggota(selectedSektor, selectedKelas);
     }
 
-    function renderRekap() {
+    // Fungsi membaca data langsung dari Google Sheet menggunakan GViz API Format CSV
+    function loadDataFromGoogleSheet() {
+        if (!SPREADSHEET_ID || SPREADSHEET_ID === "MASUKKAN_SPREADSHEET_ID_ANDA_DISINI") {
+            document.getElementById('loading-status').innerText = "Mohon isi SPREADSHEET_ID terlebih dahulu di bagian script!";
+            return;
+        }
+
+        const gvizUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+
+        fetch(gvizUrl)
+            .then(response => {
+                if (!response.ok) throw new Error("Gagal mengambil data GViz");
+                return response.text();
+            })
+            .then(csvText => {
+                parseCSVAndRenderRekap(csvText);
+            })
+            .catch(error => {
+                console.error("Error GViz:", error);
+                document.getElementById('loading-status').innerText = "Gagal memuat rekap data dari Google Sheet.";
+            });
+    }
+
+    // Parser CSV sederhana untuk mengolah data baris dari GViz
+    function parseCSVAndRenderRekap(csvText) {
+        let rows = [];
+        let lines = csvText.split("\n");
+        
+        for (let i = 0; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            let row = lines[i].split(',').map(val => val.replace(/^["'](.*)["']$/, '$1').trim());
+            rows.push(row);
+        }
+
+        if (rows.length <= 1) {
+            document.getElementById('loading-status').style.display = 'none';
+            document.getElementById('table-rekap-gabungan').style.display = 'table';
+            renderRekapUI({});
+            return;
+        }
+
+        let headers = rows[0];
+        let idxSektor = headers.indexOf("id_sektor");
+        let idxKelas = headers.indexOf("id_kelas");
+        let idxAnggota = headers.indexOf("id_anggota");
+        let idxJmlAnak = headers.indexOf("jumlah_anak");
+        
+        // Index kolom opsional detail anak jika ada di sheet (nama_anak, tempat_lahir, dll)
+        let idxNamaAnak = headers.indexOf("nama_anak");
+        let idxTempatLahir = headers.indexOf("tempat_lahir");
+        let idxTglLahir = headers.indexOf("tanggal_lahir");
+        let idxPendidikan = headers.indexOf("pendidikan");
+        let idxTerbina = headers.indexOf("terbina");
+        let idxKelasAnak = headers.indexOf("kelas_anak");
+        let idxPelaksana = headers.indexOf("pelaksana");
+        let idxKondisi = headers.indexOf("kondisi");
+
+        let parsedData = {};
+        detailedDatabaseRecord = {};
+
+        // Loop mulai dari baris ke-2 (index 1)
+        for (let i = 1; i < rows.length; i++) {
+            let r = rows[i];
+            if (r.length <= Math.max(idxSektor, idxKelas, idxAnggota)) continue;
+
+            let sektor = r[idxSektor];
+            let kelas = r[idxKelas];
+            let idAnggota = r[idxAnggota];
+            let jumlahAnak = r[idxJmlAnak] || "1";
+
+            if (!sektor || !kelas || !idAnggota) continue;
+
+            let uKey = `${sektor}_${kelas}`;
+            if (!parsedData[uKey]) {
+                parsedData[uKey] = [];
+            }
+
+            let detailKey = `${sektor}_${kelas}_${idAnggota}`;
+            if (!detailedDatabaseRecord[detailKey]) {
+                detailedDatabaseRecord[detailKey] = {
+                    id_anggota: idAnggota,
+                    anak_list: []
+                };
+            }
+
+            // Simpan detail anak jika kolomnya tersedia di sheet
+            detailedDatabaseRecord[detailKey].anak_list.push({
+                nama: idxNamaAnak > -1 ? r[idxNamaAnak] : '',
+                tempat_lahir: idxTempatLahir > -1 ? r[idxTempatLahir] : '',
+                tanggal_lahir: idxTglLahir > -1 ? r[idxTglLahir] : '',
+                pendidikan: idxPendidikan > -1 ? r[idxPendidikan] : '',
+                terbina: idxTerbina > -1 ? r[idxTerbina] : '',
+                kelas: idxKelasAnak > -1 ? r[idxKelasAnak] : '',
+                pelaksana: idxPelaksana > -1 ? r[idxPelaksana] : '',
+                kondisi: idxKondisi > -1 ? r[idxKondisi] : ''
+            });
+
+            // Hindari duplikat ID Anggota yang sama persis di kelas yang sama pada rekap gabungan
+            let exists = parsedData[uKey].some(item => item.id_anggota === idAnggota);
+            if (!exists) {
+                parsedData[uKey].push({
+                    id_anggota: idAnggota,
+                    jumlah_anak: jumlahAnak
+                });
+            }
+        }
+
+        renderRekapUI(parsedData);
+    }
+
+    function renderRekapUI(submittedAnggotaData) {
         const sektorSet = new Set(masterData.map(item => item.id_sektor));
         let daftarSektor = Array.from(sektorSet).sort();
         if (daftarSektor.includes("L5")) {
@@ -619,13 +779,10 @@
         }
 
         const tbodyGabungan = document.getElementById('tbody-rekap-gabungan');
-        const tbodyAnggota = document.getElementById('tbody-rekap-anggota');
         tbodyGabungan.innerHTML = '';
-        tbodyAnggota.innerHTML = '';
 
         let grandTotalKelas = 0;
-        let totalAnggotaRows = 0;
-        let totalGlobalAnggotaMengisi = 0;
+        globalListSemuaAnggota = [];
 
         daftarSektor.forEach(sektor => {
             const kelasSektor = masterData.filter(item => item.id_sektor === sektor);
@@ -635,21 +792,16 @@
             let totalAnggotaSektorIni = 0;
 
             uniqueKelasSet.forEach(kelas => {
-                const uKey = getUniqueKey(sektor, kelas);
+                const uKey = `${sektor}_${kelas}`;
                 if (submittedAnggotaData[uKey] && submittedAnggotaData[uKey].length > 0) {
                     submittedAnggotaData[uKey].forEach(ang => {
-                        totalAnggotaRows++;
                         totalAnggotaSektorIni++;
-                        totalGlobalAnggotaMengisi++;
-                        tbodyAnggota.innerHTML += `
-                            <tr>
-                                <td>${totalAnggotaRows}</td>
-                                <td><b>${sektor === "L5" ? "L5" : "Sektor " + sektor}</b></td>
-                                <td>${kelas}</td>
-                                <td>${ang.id_anggota}</td>
-                                <td>${ang.jumlah_anak} Anak</td>
-                            </tr>
-                        `;
+                        globalListSemuaAnggota.push({
+                            sektor: sektor,
+                            kelas: kelas,
+                            id_anggota: ang.id_anggota,
+                            jumlah_anak: ang.jumlah_anak
+                        });
                     });
                 }
             });
@@ -665,17 +817,63 @@
             `;
         });
 
-        if (totalAnggotaRows === 0) {
-            tbodyAnggota.innerHTML = `<tr><td colspan="5" style="color: #777; font-style: italic;">Belum ada data anggota yang disimpan.</td></tr>`;
-        }
+        // Balik urutan agar data yang paling baru masuk berada di paling atas
+        globalListSemuaAnggota.reverse();
+
+        tampilkanDataAnggotaKeTabel(globalListSemuaAnggota);
 
         document.getElementById('loading-status').style.display = 'none';
         document.getElementById('table-rekap-gabungan').style.display = 'table';
     }
 
+    function tampilkanDataAnggotaKeTabel(dataArray) {
+        const tbodyAnggota = document.getElementById('tbody-rekap-anggota');
+        tbodyAnggota.innerHTML = '';
+
+        if (dataArray.length === 0) {
+            tbodyAnggota.innerHTML = `<tr><td colspan="5" style="color: #777; font-style: italic;">Tidak ada data anggota yang ditemukan.</td></tr>`;
+            return;
+        }
+
+        dataArray.forEach((ang, index) => {
+            tbodyAnggota.innerHTML += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><b>${ang.sektor === "L5" ? "L5" : "Sektor " + ang.sektor}</b></td>
+                    <td>${ang.kelas}</td>
+                    <td>${ang.id_anggota}</td>
+                    <td>${ang.jumlah_anak} Anak</td>
+                </tr>
+            `;
+        });
+    }
+
+    function filterRekapAnggota() {
+        const keyword = document.getElementById('input-pencarian-anggota').value.toLowerCase().trim();
+        
+        if (!keyword) {
+            tampilkanDataAnggotaKeTabel(globalListSemuaAnggota);
+            return;
+        }
+
+        const filtered = globalListSemuaAnggota.filter(item => {
+            const namaSektorFormatted = (item.sektor === "L5" ? "l5" : "sektor " + item.sektor).toLowerCase();
+            const rawSektor = item.sektor.toLowerCase();
+            const kelasStr = item.kelas.toLowerCase();
+            const idAnggotaStr = item.id_anggota.toLowerCase();
+
+            return namaSektorFormatted.includes(keyword) || 
+                   rawSektor.includes(keyword) || 
+                   kelasStr.includes(keyword) || 
+                   idAnggotaStr.includes(keyword);
+        });
+
+        tampilkanDataAnggotaKeTabel(filtered);
+    }
+
     window.onload = function() {
         renderSektorList();
-        renderRekap();
+        loadDataFromGoogleSheet(); // Ambil data dari Google Sheet via GViz saat halaman dibuka
     };
 </script>
 
