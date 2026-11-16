@@ -203,125 +203,125 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyLjqhMOlAprlZk02UEOBFdj2jHefcyE-u-nGj-f9OICa4Ozis60IOfA1OI06cfZILcTg/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyLjqhMOlAprlZk02UEOBFdj2jHefcyE-u-nGj-f9OICa4Ozis60IOfA1OI06cfZILcTg/exec";
     
     // Masukkan Spreadsheet ID Anda di bawah ini (diambil dari URL Google Sheet Anda)
-    const SPREADSHEET_ID = "1Zi4anrDtl_CGDWubR7ayCgg2uliPjs3tFm563uifxOc"; 
+    const SPREADSHEET_ID = "1Zi4anrDtl_CGDWubR7ayCgg2uliPjs3tFm563uifxOc";
     const SHEET_NAME = "data";
 
-    let masterData = [
-        {id_sektor: "BA", id_kelas: "AA301"},
-        {id_sektor: "BA", id_kelas: "AA302"},
-        {id_sektor: "BA", id_kelas: "AA303"},
-        {id_sektor: "BA", id_kelas: "AA304"},
-        {id_sektor: "BA", id_kelas: "AA305"},
-        {id_sektor: "BA", id_kelas: "AA401"},
-        {id_sektor: "BA", id_kelas: "IA301"},
-        {id_sektor: "BA", id_kelas: "IA302"},
-        {id_sektor: "BA", id_kelas: "IA303"},
-        {id_sektor: "BA", id_kelas: "IA304"},
-        {id_sektor: "BA", id_kelas: "IA305"},
-        {id_sektor: "BA", id_kelas: "IA401"},
-        {id_sektor: "BA", id_kelas: "IA402"},
-        {id_sektor: "BA", id_kelas: "IA403"},
-        {id_sektor: "BA", id_kelas: "IA404"},
-        {id_sektor: "BA", id_kelas: "IA501"},
-        {id_sektor: "BA", id_kelas: "IA503"},
-        {id_sektor: "BI", id_kelas: "IA301"},
-        {id_sektor: "BI", id_kelas: "IA302"},
-        {id_sektor: "BI", id_kelas: "IA303"},
-        {id_sektor: "BI", id_kelas: "IA401"},
-        {id_sektor: "BI", id_kelas: "IA402"},
-        {id_sektor: "GA", id_kelas: "AA301"},
-        {id_sektor: "GA", id_kelas: "AA302"},
-        {id_sektor: "GA", id_kelas: "AA401"},
-        {id_sektor: "GA", id_kelas: "IA301"},
-        {id_sektor: "GA", id_kelas: "IA302"},
-        {id_sektor: "GA", id_kelas: "IA303"},
-        {id_sektor: "GA", id_kelas: "IA304"},
-        {id_sektor: "GA", id_kelas: "IA305"},
-        {id_sektor: "GA", id_kelas: "IA306"},
-        {id_sektor: "GA", id_kelas: "IA307"},
-        {id_sektor: "GA", id_kelas: "IA401"},
-        {id_sektor: "GA", id_kelas: "IA402"},
-        {id_sektor: "GA", id_kelas: "IA403"},
-        {id_sektor: "GA", id_kelas: "IA404"},
-        {id_sektor: "GA", id_kelas: "IA405"},
-        {id_sektor: "GA", id_kelas: "IA420"},
-        {id_sektor: "GA", id_kelas: "IA507"},
-        {id_sektor: "MA", id_kelas: "AA301"},
-        {id_sektor: "MA", id_kelas: "AA302"},
-        {id_sektor: "MA", id_kelas: "AA401"},
-        {id_sektor: "MA", id_kelas: "IA301"},
-        {id_sektor: "PR", id_kelas: "AA301"},
-        {id_sektor: "PR", id_kelas: "AA302"},
-        {id_sektor: "PR", id_kelas: "AA303"},
-        {id_sektor: "PR", id_kelas: "AA401"},
-        {id_sektor: "PR", id_kelas: "AA402"},
-        {id_sektor: "PR", id_kelas: "AA501"},
-        {id_sektor: "PR", id_kelas: "AX301"},
-        {id_sektor: "PR", id_kelas: "IA301"},
-        {id_sektor: "PR", id_kelas: "IA302"},
-        {id_sektor: "PR", id_kelas: "IA401"},
-        {id_sektor: "PR", id_kelas: "IA506"},
-        {id_sektor: "RG", id_kelas: "AA301"},
-        {id_sektor: "RG", id_kelas: "AA302"},
-        {id_sektor: "RG", id_kelas: "AA401"},
-        {id_sektor: "RG", id_kelas: "IA301"},
-        {id_sektor: "RG", id_kelas: "IA302"},
-        {id_sektor: "RG", id_kelas: "IA303"},
-        {id_sektor: "RG", id_kelas: "IA304"},
-        {id_sektor: "RG", id_kelas: "IA305"},
-        {id_sektor: "RG", id_kelas: "IA401"},
-        {id_sektor: "RW", id_kelas: "AA301"},
-        {id_sektor: "RW", id_kelas: "AA502"},
-        {id_sektor: "RW", id_kelas: "AX301"},
-        {id_sektor: "RW", id_kelas: "AX401"},
-        {id_sektor: "RW", id_kelas: "AX402"},
-        {id_sektor: "RW", id_kelas: "IA301"},
-        {id_sektor: "RW", id_kelas: "IA302"},
-        {id_sektor: "RW", id_kelas: "IA303"},
-        {id_sektor: "RW", id_kelas: "IA304"},
-        {id_sektor: "RW", id_kelas: "IA305"},
-        {id_sektor: "RW", id_kelas: "IA401"},
-        {id_sektor: "RW", id_kelas: "IA402"},
-        {id_sektor: "RW", id_kelas: "IA504"},
-        {id_sektor: "SA", id_kelas: "AA301"},
-        {id_sektor: "SA", id_kelas: "AA302"},
-        {id_sektor: "SA", id_kelas: "AA303"},
-        {id_sektor: "SA", id_kelas: "AA304"},
-        {id_sektor: "SA", id_kelas: "AA305"},
-        {id_sektor: "SA", id_kelas: "AA306"},
-        {id_sektor: "SA", id_kelas: "AA307"},
-        {id_sektor: "SA", id_kelas: "AA308"},
-        {id_sektor: "SA", id_kelas: "AA401"},
-        {id_sektor: "SA", id_kelas: "AA402"},
-        {id_sektor: "SA", id_kelas: "AA403"},
-        {id_sektor: "SA", id_kelas: "IA301"},
-        {id_sektor: "SA", id_kelas: "IA302"},
-        {id_sektor: "SA", id_kelas: "IA303"},
-        {id_sektor: "SA", id_kelas: "IA305"},
-        {id_sektor: "SA", id_kelas: "IA401"},
-        {id_sektor: "SA", id_kelas: "IA402"},
-        {id_sektor: "SA", id_kelas: "IA505"},
-        {id_sektor: "SL", id_kelas: "AA301"},
-        {id_sektor: "SL", id_kelas: "AA303"},
-        {id_sektor: "SL", id_kelas: "IA301"},
-        {id_sektor: "SL", id_kelas: "IA302"},
-        {id_sektor: "SL", id_kelas: "IA401"},
-        {id_sektor: "SL", id_kelas: "IA402"},
-        {id_sektor: "SL", id_kelas: "IA502"},
-        {id_sektor: "SU", id_kelas: "AA301"},
-        {id_sektor: "SU", id_kelas: "AA401"},
-        {id_sektor: "SU", id_kelas: "IA301"},
-        {id_sektor: "SU", id_kelas: "IA302"},
-        {id_sektor: "SU", id_kelas: "IA303"},
-        {id_sektor: "SU", id_kelas: "IA304"},
-        {id_sektor: "SU", id_kelas: "IA401"},
-        {id_sektor: "SU", id_kelas: "IA402"},
-        {id_sektor: "SU", id_kelas: "IA508"}
-    ];
-	
+	let masterData = [
+	    {id_sektor:"BA", id_kelas:"AA301"},
+	    {id_sektor:"BA", id_kelas:"AA302"},
+	    {id_sektor:"BA", id_kelas:"AA303"},
+	    {id_sektor:"BA", id_kelas:"AA304"},
+	    {id_sektor:"BA", id_kelas:"AA305"},
+	    {id_sektor:"BA", id_kelas:"AA401"},
+	    {id_sektor:"BA", id_kelas:"IA301"},
+	    {id_sektor:"BA", id_kelas:"IA302"},
+	    {id_sektor:"BA", id_kelas:"IA303"},
+	    {id_sektor:"BA", id_kelas:"IA304"},
+	    {id_sektor:"BA", id_kelas:"IA305"},
+	    {id_sektor:"BA", id_kelas:"IA401"},
+	    {id_sektor:"BA", id_kelas:"IA402"},
+	    {id_sektor:"BA", id_kelas:"IA403"},
+	    {id_sektor:"BA", id_kelas:"IA404"},
+	    {id_sektor:"BA", id_kelas:"IA501"},
+	    {id_sektor:"BA", id_kelas:"IA503"},
+	    {id_sektor:"BI", id_kelas:"IA301"},
+	    {id_sektor:"BI", id_kelas:"IA302"},
+	    {id_sektor:"BI", id_kelas:"IA303"},
+	    {id_sektor:"BI", id_kelas:"IA401"},
+	    {id_sektor:"BI", id_kelas:"IA402"},
+	    {id_sektor:"GA", id_kelas:"AA301"},
+	    {id_sektor:"GA", id_kelas:"AA302"},
+	    {id_sektor:"GA", id_kelas:"AA401"},
+	    {id_sektor:"GA", id_kelas:"IA301"},
+	    {id_sektor:"GA", id_kelas:"IA302"},
+	    {id_sektor:"GA", id_kelas:"IA303"},
+	    {id_sektor:"GA", id_kelas:"IA304"},
+	    {id_sektor:"GA", id_kelas:"IA305"},
+	    {id_sektor:"GA", id_kelas:"IA306"},
+	    {id_sektor:"GA", id_kelas:"IA307"},
+	    {id_sektor:"GA", id_kelas:"IA401"},
+	    {id_sektor:"GA", id_kelas:"IA402"},
+	    {id_sektor:"GA", id_kelas:"IA403"},
+	    {id_sektor:"GA", id_kelas:"IA404"},
+	    {id_sektor:"GA", id_kelas:"IA405"},
+	    {id_sektor:"GA", id_kelas:"IA507"},
+	    {id_sektor:"MA", id_kelas:"AA301"},
+	    {id_sektor:"MA", id_kelas:"AA302"},
+	    {id_sektor:"MA", id_kelas:"AA401"},
+	    {id_sektor:"MA", id_kelas:"IA301"},
+	    {id_sektor:"PR", id_kelas:"AA301"},
+	    {id_sektor:"PR", id_kelas:"AA302"},
+	    {id_sektor:"PR", id_kelas:"AA303"},
+	    {id_sektor:"PR", id_kelas:"AA401"},
+	    {id_sektor:"PR", id_kelas:"AA402"},
+	    {id_sektor:"PR", id_kelas:"AA501"},
+	    {id_sektor:"PR", id_kelas:"AX301"},
+	    {id_sektor:"PR", id_kelas:"IA301"},
+	    {id_sektor:"PR", id_kelas:"IA302"},
+	    {id_sektor:"PR", id_kelas:"IA401"},
+	    {id_sektor:"PR", id_kelas:"IA506"},
+	    {id_sektor:"RG", id_kelas:"AA301"},
+	    {id_sektor:"RG", id_kelas:"AA302"},
+	    {id_sektor:"RG", id_kelas:"AA401"},
+	    {id_sektor:"RG", id_kelas:"IA301"},
+	    {id_sektor:"RG", id_kelas:"IA302"},
+	    {id_sektor:"RG", id_kelas:"IA303"},
+	    {id_sektor:"RG", id_kelas:"IA304"},
+	    {id_sektor:"RG", id_kelas:"IA305"},
+	    {id_sektor:"RG", id_kelas:"IA401"},
+	    {id_sektor:"RW", id_kelas:"AA301"},
+	    {id_sektor:"RW", id_kelas:"AA502"},
+	    {id_sektor:"RW", id_kelas:"AX301"},
+	    {id_sektor:"RW", id_kelas:"AX401"},
+	    {id_sektor:"RW", id_kelas:"AX402"},
+	    {id_sektor:"RW", id_kelas:"IA301"},
+	    {id_sektor:"RW", id_kelas:"IA302"},
+	    {id_sektor:"RW", id_kelas:"IA303"},
+	    {id_sektor:"RW", id_kelas:"IA304"},
+	    {id_sektor:"RW", id_kelas:"IA305"},
+	    {id_sektor:"RW", id_kelas:"IA401"},
+	    {id_sektor:"RW", id_kelas:"IA402"},
+	    {id_sektor:"RW", id_kelas:"IA504"},
+	    {id_sektor:"SA", id_kelas:"AA301"},
+	    {id_sektor:"SA", id_kelas:"AA302"},
+	    {id_sektor:"SA", id_kelas:"AA303"},
+	    {id_sektor:"SA", id_kelas:"AA304"},
+	    {id_sektor:"SA", id_kelas:"AA305"},
+	    {id_sektor:"SA", id_kelas:"AA306"},
+	    {id_sektor:"SA", id_kelas:"AA307"},
+	    {id_sektor:"SA", id_kelas:"AA308"},
+	    {id_sektor:"SA", id_kelas:"AA401"},
+	    {id_sektor:"SA", id_kelas:"AA402"},
+	    {id_sektor:"SA", id_kelas:"AA403"},
+	    {id_sektor:"SA", id_kelas:"IA301"},
+	    {id_sektor:"SA", id_kelas:"IA302"},
+	    {id_sektor:"SA", id_kelas:"IA303"},
+	    {id_sektor:"SA", id_kelas:"IA304"},
+	    {id_sektor:"SA", id_kelas:"IA305"},
+	    {id_sektor:"SA", id_kelas:"IA401"},
+	    {id_sektor:"SA", id_kelas:"IA402"},
+	    {id_sektor:"SA", id_kelas:"IA505"},
+	    {id_sektor:"SL", id_kelas:"AA301"},
+	    {id_sektor:"SL", id_kelas:"AA302"},
+	    {id_sektor:"SL", id_kelas:"AA303"},
+	    {id_sektor:"SL", id_kelas:"IA301"},
+	    {id_sektor:"SL", id_kelas:"IA302"},
+	    {id_sektor:"SL", id_kelas:"IA401"},
+	    {id_sektor:"SL", id_kelas:"IA402"},
+	    {id_sektor:"SL", id_kelas:"IA502"},
+	    {id_sektor:"SU", id_kelas:"AA301"},
+	    {id_sektor:"SU", id_kelas:"AA401"},
+	    {id_sektor:"SU", id_kelas:"IA301"},
+	    {id_sektor:"SU", id_kelas:"IA302"},
+	    {id_sektor:"SU", id_kelas:"IA303"},
+	    {id_sektor:"SU", id_kelas:"IA304"},
+	    {id_sektor:"SU", id_kelas:"IA401"},
+	    {id_sektor:"SU", id_kelas:"IA402"},
+	    {id_sektor:"SU", id_kelas:"IA508"}
+	];	
     masterData.forEach(item => {
         if (item.id_kelas && item.id_kelas.length >= 3 && item.id_kelas.charAt(2) === '5') {
             item.id_sektor = "L5";
@@ -410,6 +410,39 @@
                     <div class="form-group">
                         <label>ID Anggota:</label>
                         <input type="text" id="input_id_anggota" placeholder="Masukkan ID Anggota" oninput="handleIdAnggotaInput(this.value, '${sektor}', '${kelas}')">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Lokasi Kantor:</label>
+                        <select id="sel_lokasi_kantor">
+                            <option value="">--Pilih Lokasi Kantor--</option>
+                            <option>Jakarta Pusat</option>
+                            <option>Jakarta Utara</option>
+                            <option>Jakarta Barat</option>
+                            <option>Jakarta Selatan</option>
+                            <option>Jakarta Timur</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Domisili:</label>
+                        <select id="sel_domisili">
+                            <option value="">--Pilih Domisili--</option>
+                            <option>Jakarta Pusat</option>
+                            <option>Jakarta Utara</option>
+                            <option>Jakarta Barat</option>
+                            <option>Jakarta Selatan</option>
+                            <option>Jakarta Timur</option>
+                            <option>Kota Tangerang</option>
+                            <option>Kota Tangerang Selatan</option>
+                            <option>Kabupaten Tangerang</option>
+                            <option>Kota Bekasi</option>
+                            <option>Kabupaten Bekasi</option>
+                            <option>Kota Depok</option>
+                            <option>Kota Bogor</option>
+                            <option>Kabupaten Bogor</option>
+                            <option>Kabupaten Cianjur</option>
+                        </select>
                     </div>
                     
                     <div class="sub-card">
@@ -517,19 +550,26 @@
                 document.getElementById('sel_kelas').value = firstAnak.kelas || '';
                 document.getElementById('sel_pelaksana').value = firstAnak.pelaksana || '';
                 document.getElementById('sel_kondisi').value = firstAnak.kondisi || '';
-                
-                // Jika anak lebih dari 1, masukkan sisanya ke temporary list setelah anak pertama diedit/lanjut
-                // Untuk kesederhanaan, temporaryAnakList akan di-reset dan diisi ulang saat tombol simpan/tambah
             }
         }
     }
 
     function cekDanMunculkanPertanyaanAnak() {
         const idAnggota = document.getElementById('input_id_anggota').value.trim();
+        const lokasiKantor = document.getElementById('sel_lokasi_kantor').value;
+        const domisili = document.getElementById('sel_domisili').value;
         const namaAnak = document.getElementById('input_nama_anak').value.trim();
         
         if(!idAnggota) {
             alert("ID Anggota wajib diisi terlebih dahulu!");
+            return;
+        }
+        if(!lokasiKantor) {
+            alert("Mohon pilih lokasi kantor terlebih dahulu!");
+            return;
+        }
+        if(!domisili) {
+            alert("Mohon pilih domisili terlebih dahulu!");
             return;
         }
         if(!namaAnak) {
@@ -557,7 +597,6 @@
     function prosesJawabanAnak(adaLagi) {
         const anakObj = ambilDataAnakAktif();
         
-        // Ganti data index aktif jika sudah ada di temporaryAnakList, atau push baru
         if (temporaryAnakList[currentAnakIndex - 1]) {
             temporaryAnakList[currentAnakIndex - 1] = anakObj;
         } else {
@@ -573,7 +612,6 @@
             currentAnakIndex++;
             document.getElementById('label-anak-title').innerText = `Data Anak ke-${currentAnakIndex}:`;
             
-            // Cek apakah data anak berikutnya sudah ada di record sebelumnya
             const nextAnak = temporaryAnakList[currentAnakIndex - 1] || {};
             document.getElementById('input_nama_anak').value = nextAnak.nama || '';
             document.getElementById('input_tempat_lahir').value = nextAnak.tempat_lahir || '';
@@ -589,7 +627,6 @@
         } else {
             selesaiSemuaAnak();
 
-            // SAAT KLIK "TIDAK": Scroll ke Rekap Data Anggota & Anak
             setTimeout(() => {
                 const targetPreview = document.getElementById('target-preview-rekap');
                 if (targetPreview) {
@@ -604,10 +641,14 @@
         document.getElementById('btn-lanjut-anak').style.display = 'none';
 
         const idAnggota = document.getElementById('input_id_anggota').value.trim();
+        const lokasiKantor = document.getElementById('sel_lokasi_kantor').value;
+        const domisili = document.getElementById('sel_domisili').value;
         document.getElementById('form-anggota-body').style.display = 'none';
         
         let htmlPreview = `
             <b>ID Anggota:</b> ${idAnggota}<br>
+            <b>Lokasi Kantor:</b> ${lokasiKantor}<br>
+            <b>Domisili:</b> ${domisili}<br>
             <b>Total Anak Terdata:</b> ${temporaryAnakList.length} anak<br><hr style="margin: 5px 0;">
         `;
         temporaryAnakList.forEach((ank, idx) => {
@@ -627,11 +668,15 @@
 
     function kirimKeGoogleSheet(sektor, kelas) {
         const idAnggota = document.getElementById('input_id_anggota').value.trim();
+        const lokasiKantor = document.getElementById('sel_lokasi_kantor').value;
+        const domisili = document.getElementById('sel_domisili').value;
         
         let payloadData = {
             id_sektor: sektor,
             id_kelas: kelas,
             id_anggota: idAnggota,
+            lokasi_kantor: lokasiKantor,
+            domisili: domisili,
             jumlah_anak: temporaryAnakList.length,
             anak_list: temporaryAnakList
         };
@@ -645,13 +690,11 @@
             document.getElementById('preview-rekap-anggota').style.display = 'none';
             document.getElementById('after-save-anggota').style.display = 'block';
             
-            // SAAT KLIK SIMPAN: Scroll ke Rekap ID Anggota yang Sudah Mengisi Form
             const targetRekapAnggota = document.getElementById('target-rekap-anggota');
             if (targetRekapAnggota) {
                 targetRekapAnggota.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
-            // Refresh ulang data rekap dari Google Sheet setelah beberapa detik
             setTimeout(loadDataFromGoogleSheet, 2000);
         }).catch(err => console.error("Gagal kirim ke gs:", err));
     }
@@ -660,7 +703,6 @@
         renderFormAnggota(selectedSektor, selectedKelas);
     }
 
-    // Fungsi membaca data langsung dari Google Sheet menggunakan GViz API Format CSV
     function loadDataFromGoogleSheet() {
         if (!SPREADSHEET_ID || SPREADSHEET_ID === "MASUKKAN_SPREADSHEET_ID_ANDA_DISINI") {
             document.getElementById('loading-status').innerText = "Mohon isi SPREADSHEET_ID terlebih dahulu di bagian script!";
@@ -683,7 +725,6 @@
             });
     }
 
-    // Parser CSV sederhana untuk mengolah data baris dari GViz
     function parseCSVAndRenderRekap(csvText) {
         let rows = [];
         let lines = csvText.split("\n");
@@ -707,7 +748,6 @@
         let idxAnggota = headers.indexOf("id_anggota");
         let idxJmlAnak = headers.indexOf("jumlah_anak");
         
-        // Index kolom opsional detail anak jika ada di sheet (nama_anak, tempat_lahir, dll)
         let idxNamaAnak = headers.indexOf("nama_anak");
         let idxTempatLahir = headers.indexOf("tempat_lahir");
         let idxTglLahir = headers.indexOf("tanggal_lahir");
@@ -720,7 +760,6 @@
         let parsedData = {};
         detailedDatabaseRecord = {};
 
-        // Loop mulai dari baris ke-2 (index 1)
         for (let i = 1; i < rows.length; i++) {
             let r = rows[i];
             if (r.length <= Math.max(idxSektor, idxKelas, idxAnggota)) continue;
@@ -745,7 +784,6 @@
                 };
             }
 
-            // Simpan detail anak jika kolomnya tersedia di sheet
             detailedDatabaseRecord[detailKey].anak_list.push({
                 nama: idxNamaAnak > -1 ? r[idxNamaAnak] : '',
                 tempat_lahir: idxTempatLahir > -1 ? r[idxTempatLahir] : '',
@@ -757,7 +795,6 @@
                 kondisi: idxKondisi > -1 ? r[idxKondisi] : ''
             });
 
-            // Hindari duplikat ID Anggota yang sama persis di kelas yang sama pada rekap gabungan
             let exists = parsedData[uKey].some(item => item.id_anggota === idAnggota);
             if (!exists) {
                 parsedData[uKey].push({
@@ -817,7 +854,6 @@
             `;
         });
 
-        // Balik urutan agar data yang paling baru masuk berada di paling atas
         globalListSemuaAnggota.reverse();
 
         tampilkanDataAnggotaKeTabel(globalListSemuaAnggota);
@@ -873,7 +909,7 @@
 
     window.onload = function() {
         renderSektorList();
-        loadDataFromGoogleSheet(); // Ambil data dari Google Sheet via GViz saat halaman dibuka
+        loadDataFromGoogleSheet();
     };
 </script>
 
