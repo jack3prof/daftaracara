@@ -9,19 +9,20 @@
             font-family: Arial, sans-serif;
             background-color: #f4f7f6;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
         }
         .container {
             max-width: 1000px;
             margin: auto;
             background: white;
-            padding: 25px;
+            padding: 15px;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         h2, h3 {
             color: #333;
             text-align: center;
+            font-size: 18px;
         }
         .rekap-section {
             margin-top: 20px;
@@ -36,18 +37,31 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 15px;
-            min-width: 500px;
+            min-width: 100%;
+            table-layout: fixed;
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 6px 4px;
             text-align: center;
-            font-size: 14px;
+            font-size: 12px;
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
         }
         th {
             background-color: #007BFF;
             color: white;
+            vertical-align: middle;
         }
+        
+        /* Pengaturan Lebar Kolom Tabel Rekap Anggota */
+        #tbody-rekap-anggota tr th:nth-child(1), #tbody-rekap-anggota tr td:nth-child(1) { width: 10%; }
+        #tbody-rekap-anggota tr th:nth-child(2), #tbody-rekap-anggota tr td:nth-child(2) { width: 25%; }
+        #tbody-rekap-anggota tr th:nth-child(3), #tbody-rekap-anggota tr td:nth-child(3) { width: 20%; }
+        #tbody-rekap-anggota tr th:nth-child(4), #tbody-rekap-anggota tr td:nth-child(4) { width: 25%; }
+        #tbody-rekap-anggota tr th:nth-child(5), #tbody-rekap-anggota tr td:nth-child(5) { width: 20%; }
+
         .loading {
             text-align: center;
             font-style: italic;
@@ -56,13 +70,13 @@
         .sektor-list, .kelas-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 6px;
             justify-content: center;
             margin-bottom: 15px;
         }
         .kelas-list {
             background-color: #f1f3f5;
-            padding: 15px;
+            padding: 10px;
             border-radius: 6px;
             border: 1px solid #e2e8f0;
         }
@@ -70,13 +84,13 @@
             display: none;
         }
         .btn-sektor, .btn-kelas {
-            padding: 8px 16px;
+            padding: 6px 12px;
             background-color: #6c757d;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
         }
         .btn-sektor.active, .btn-kelas.active {
             background-color: #007BFF;
@@ -84,46 +98,46 @@
         .card {
             background: #fafafa;
             border: 1px solid #ddd;
-            padding: 20px;
+            padding: 12px;
             border-radius: 6px;
             max-width: 600px;
             margin: 0 auto 20px auto;
         }
         .card-title {
             font-weight: bold;
-            font-size: 16px;
+            font-size: 15px;
             color: #007BFF;
             margin-bottom: 15px;
             text-align: center;
         }
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .form-group label {
             display: block;
             font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 13px;
+            margin-bottom: 4px;
+            font-size: 12px;
         }
         input[type="text"], input[type="date"], select {
             width: 100%;
-            padding: 8px;
+            padding: 7px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 13px;
             box-sizing: border-box;
         }
         .btn-action {
             display: block;
             width: 100%;
             margin-top: 15px;
-            padding: 10px;
+            padding: 9px;
             background-color: #28a745;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
         }
         .btn-action:hover { background-color: #218838; }
@@ -135,7 +149,7 @@
         .sub-card {
             background: #f1f8ff;
             border: 1px solid #c8e1ff;
-            padding: 15px;
+            padding: 10px;
             border-radius: 6px;
             margin-top: 15px;
         }
@@ -340,7 +354,7 @@
     let selectedSektor = null;
     let selectedKelas = null;
     let globalListSemuaAnggota = [];
-    let detailedDatabaseRecord = {}; // Menyimpan detail lengkap record per kelas & id_anggota
+    let detailedDatabaseRecord = {};
 
     function renderSektorList() {
         const sekaSet = new Set(masterData.map(item => item.id_sektor));
@@ -530,13 +544,11 @@
     }
 
     function handleIdAnggotaInput(val, sektor, kelas) {
-        // Otomatis uppercase
         const upperVal = val.toUpperCase();
         document.getElementById('input_id_anggota').value = upperVal;
 
         const uKey = `${sektor}_${kelas}_${upperVal.trim()}`;
         if (detailedDatabaseRecord[uKey]) {
-            // Jika record sudah ada, muat data anak pertama ke form utama
             const record = detailedDatabaseRecord[uKey];
             temporaryAnakList = [...record.anak_list];
             
